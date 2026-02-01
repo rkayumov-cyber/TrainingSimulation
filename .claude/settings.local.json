@@ -1,0 +1,39 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dir /s /b \"C:\\\\Users\\\\Ros\\\\ClaudeProjects\\\\TrainingSimulation\")",
+      "Bash(npm create:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm run lint)",
+      "Bash(timeout 10 npm run dev:*)",
+      "Bash(curl:*)",
+      "Bash(timeout:*)",
+      "Bash(npm run dev:*)",
+      "Bash(start http://localhost:5173/)",
+      "Bash(npx tsc:*)",
+      "mcp__ide__getDiagnostics",
+      "Bash(npm ls:*)",
+      "Bash(start:*)",
+      "Bash(taskkill:*)",
+      "WebSearch",
+      "Bash(tree:*)",
+      "Bash(npm run format:*)",
+      "Bash(npx prettier:*)",
+      "Bash(powershell -Command:*)",
+      "Bash(findstr:*)",
+      "Bash(dir:*)",
+      "Bash(powershell -NoProfile -Command:*)",
+      "Bash(powershell -NoProfile -File NUL -Command \"Write-Output test\")",
+      "Bash(powershell -NoProfile -ExecutionPolicy Bypass -File \"C:\\\\Users\\\\Ros\\\\ClaudeProjects\\\\TrainingSimulation\\\\search_p2.ps1\")",
+      "Bash(powershell -NoProfile -ExecutionPolicy Bypass -File \"C:\\\\Users\\\\Ros\\\\ClaudeProjects\\\\TrainingSimulation\\\\search_p2_detail.ps1\")",
+      "Bash(del \"C:\\\\Users\\\\Ros\\\\ClaudeProjects\\\\TrainingSimulation\\\\search_p2.ps1\" \"C:\\\\Users\\\\Ros\\\\ClaudeProjects\\\\TrainingSimulation\\\\search_p2_detail.ps1\")",
+      "Bash(npx vite build:*)",
+      "Bash(npx eslint:*)",
+      "Bash(ls \"C:\\\\Users\\\\Ros\\\\ClaudeProjects\\\\TrainingSimulation\\\\src\\\\services\\\\assessment\"\" 2>nul || echo \"Directory does not exist \")",
+      "Bash(node:*)",
+      "Bash(ls \"C:\\\\Users\\\\Ros\\\\ClaudeProjects\\\\TrainingSimulation\\\\src\\\\data\\\\demo\"\" 2>nul || echo \"Directory does not exist \")",
+      "Bash(git add:*)"
+    ]
+  }
+}
