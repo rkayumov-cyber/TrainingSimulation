@@ -339,6 +339,107 @@ const intentPatterns: IntentPattern[] = [
   },
   { pattern: /\brhythm\s+check\b/i, action: "check_rhythm" },
 
+  // PE-specific
+  {
+    pattern:
+      /\b(order|get|do)\s+(a\s+)?(ct\s*pa|ct\s+pulmonary\s+angiog|ctpa)\b/i,
+    action: "order_ctpa",
+  },
+  { pattern: /\bctpa\b/i, action: "order_ctpa" },
+  {
+    pattern:
+      /\b(order|do|get)\s+(a\s+)?(bedside\s+)?(echo|echocardiogra|transthoracic)\b/i,
+    action: "order_echo",
+  },
+  { pattern: /\b(echo|echocardiogram)\b/i, action: "order_echo" },
+  {
+    pattern:
+      /\b(give|administer|start)\s+(heparin|anticoagula|enoxaparin|lmwh)\b/i,
+    action: "administer_heparin",
+  },
+  { pattern: /\bheparin\b/i, action: "administer_heparin" },
+  {
+    pattern: /\b(check|examine|look at|inspect)\s+(the\s+)?(legs?|calves?|lower\s+extremit)\b/i,
+    action: "check_legs",
+  },
+  {
+    pattern:
+      /\b(order|get|check|draw)\s+(a\s+)?(d[- ]?dimer)\b/i,
+    action: "order_d_dimer",
+  },
+  { pattern: /\bd[- ]?dimer\b/i, action: "order_d_dimer" },
+  {
+    pattern:
+      /\b(order|get|check|draw)\s+(a\s+)?(bnp|brain\s+natriuretic|nt[- ]?pro\s*bnp|pro\s*bnp)\b/i,
+    action: "order_bnp",
+  },
+  {
+    pattern:
+      /\b(start|give|administer)\s+(vasopressor|norepinephrine|noradrenaline|vasopressin|phenylephrine)\b/i,
+    action: "start_vasopressor",
+  },
+
+  // Dengue / Myocarditis-specific
+  {
+    pattern:
+      /\b(order|get|do)\s+(a\s+)?(cardiac\s+mri|cmr|cardiac\s+magnetic)\b/i,
+    action: "order_cardiac_mri",
+  },
+  { pattern: /\bcardiac\s+mri\b/i, action: "order_cardiac_mri" },
+  {
+    pattern:
+      /\b(order|do|get|perform)\s+(a\s+)?(coronary\s+angiogra|cath\s*lab|cardiac\s+cath|angiogram)\b/i,
+    action: "order_coronary_angiography",
+  },
+  { pattern: /\b(angiogra|cath\s*lab)\b/i, action: "order_coronary_angiography" },
+  {
+    pattern:
+      /\b(order|get|send|check)\s+(a?\s*)?(dengue|denv)\s*(test|serology|pcr|antigen|ns1|igm|igg)?\b/i,
+    action: "order_dengue_serology",
+  },
+  { pattern: /\bdengue\s*(test|serology|pcr|ns1)\b/i, action: "order_dengue_serology" },
+  {
+    pattern:
+      /\b(order|get|check|draw)\s+(a\s+)?(crp|c[- ]?reactive\s+protein|esr|sed\s+rate)\b/i,
+    action: "order_crp",
+  },
+  {
+    pattern:
+      /\b(ask|take|get)\s+(about\s+)?(travel\s+history|travel|where\s+(from|have\s+you\s+been))\b/i,
+    action: "take_travel_history",
+  },
+  { pattern: /\btravel\s+history\b/i, action: "take_travel_history" },
+  {
+    pattern:
+      /\b(give|administer|start)\s+(nsaid|ibuprofen|naproxen|indomethacin|ketorolac|anti[- ]?inflammator)\b/i,
+    action: "administer_nsaids",
+  },
+  {
+    pattern: /\b(give|administer|start)\s+(colchicine)\b/i,
+    action: "administer_colchicine",
+  },
+  { pattern: /\bcolchicine\b/i, action: "administer_colchicine" },
+  {
+    pattern:
+      /\b(consult|call|page|refer\s+to)\s+(cardiology|cardiologist|cards)\b/i,
+    action: "consult_cardiology",
+  },
+  {
+    pattern:
+      /\b(continuous|cardiac)\s+monitor(ing)?\b/i,
+    action: "continuous_monitoring",
+  },
+  {
+    pattern:
+      /\b(call|get|request)\s+(for\s+)?(help|senior|consultant|attending|backup)\b/i,
+    action: "call_for_help",
+  },
+  {
+    pattern:
+      /\b(give|administer)\s+(high[- ]?dose\s+)?(aspirin|asa)\s*(750|high[- ]?dose)?\b/i,
+    action: "administer_aspirin_hd",
+  },
+
   // Overdose-specific
   {
     pattern: /\b(give|administer|push)\s+(naloxone|narcan|naxone)\b/i,

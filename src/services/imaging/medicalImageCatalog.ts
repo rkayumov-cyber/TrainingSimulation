@@ -764,6 +764,22 @@ export const SCENARIO_IMAGE_SETS: ScenarioImageSet[] = [
     description:
       "Comprehensive image set for massive PE: S1Q3T3 ECG with RV strain pattern, sinus tachycardia, VF/asystole (if arrest), CXR with Westermark/Fleischner signs, ABG showing respiratory alkalosis with severe hypoxemia and elevated A-a gradient, pupil assessment (normal → fixed dilated if arrest), GCS monitoring. 12 images covering the full clinical trajectory.",
   },
+  {
+    scenarioId: "dengue-myocarditis-43m",
+    scenarioName: "Dengue Myocarditis Mimicking ACS",
+    images: [
+      "ecg-normal-sinus",
+      "ecg-anterior-stemi",
+      "ecg-inferior-stemi",
+      "cxr-normal",
+      "abg-normal",
+      "abg-respiratory-alkalosis",
+      "pupils-normal",
+      "gcs-15",
+    ],
+    description:
+      "ECG comparison set (normal vs STEMI patterns to differentiate from myocarditis), normal CXR, ABG reference for near-normal values, baseline neurological assessment. The key diagnostic images (echo, coronary angiography, cardiac MRI) are scenario-specific and not in the generic catalog.",
+  },
 ];
 
 // ============================================================================

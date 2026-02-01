@@ -303,6 +303,32 @@ export const SCENARIO_EXAM_FINDINGS: Record<string, Record<string, string>> = {
       "GCS E2V2M4 = 8. Opens eyes to pain. Incomprehensible sounds. Withdrawal to pain.",
     neuro_reflexes: "Globally reduced reflexes. Downgoing plantars.",
   },
+  // ══════════════════════════════════════════════════════════════════════════
+  // DENGUE MYOCARDITIS — 43M (Mr. Mendez)
+  // ══════════════════════════════════════════════════════════════════════════
+  "dengue-myocarditis-43m": {
+    gen_appearance:
+      "Middle-aged male, alert, mildly distressed from chest pain. Sitting upright. Able to speak in full sentences. Mild diaphoresis.",
+    gen_skin_color:
+      "Normal skin color. No petechiae or purpura (no hemorrhagic dengue). No rash. No jaundice.",
+    cv_heart_sounds:
+      "Regular rhythm ~95 bpm. Normal S1/S2. PERICARDIAL FRICTION RUB at left lower sternal border — scratchy, triphasic sound best heard with patient leaning forward. Pathognomonic for pericarditis. No murmurs.",
+    cv_peripheral_pulses:
+      "Regular, normal volume bilaterally. No radio-radial delay. No BP differential between arms.",
+    cv_cap_refill: "CRT 2 seconds (normal).",
+    resp_breath_sounds:
+      "Clear air entry bilaterally. No wheeze. No crackles. No pleural rub.",
+    abd_light_palpation:
+      "Soft, non-tender. Liver NOT palpable (no hepatomegaly — important dengue warning sign to exclude). No splenomegaly.",
+    hn_oral_cavity:
+      "Moist mucous membranes. No gingival bleeding. No oral petechiae.",
+    skin_inspection:
+      "No petechiae. No purpura. No ecchymoses. No tourniquet test petechiae. Old insect bite marks on forearms (tropical exposure). No maculopapular rash.",
+    skin_temperature: "Warm peripherally. Core temp 37.4°C (low-grade fever).",
+    neuro_gcs: "GCS E4V5M6 = 15. Fully alert and oriented.",
+    ms_joints:
+      "Mild residual tenderness in large joints (knees, shoulders) — residual dengue arthralgia. No swelling or erythema.",
+  },
 };
 
 /**

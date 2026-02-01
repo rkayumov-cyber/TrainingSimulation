@@ -484,6 +484,117 @@ const SCENARIO_IMAGING: Record<
       },
     },
   ],
+  "dengue-myocarditis-43m": [
+    {
+      name: "ECG",
+      type: "ecg",
+      delayMs: 3000,
+      findings: {
+        summary:
+          "ST elevation 2mm in II, III, aVF, V4-V6. No reciprocal depression. Sinus rhythm 95 bpm.",
+        details: [
+          "Sinus rhythm, rate 95 bpm",
+          "ST elevation 2mm in leads II, III, aVF (inferior)",
+          "ST elevation 2mm in V4, V5, V6 (lateral)",
+          "NO reciprocal ST depression (atypical for MI — favors myocarditis)",
+          "No pathological Q waves",
+          "Normal PR interval (no PR depression — partial pericarditis overlap)",
+          "Normal QRS duration",
+          "Involvement of multiple vascular territories (LAD + RCA) without reciprocal changes = diffuse process",
+        ],
+        urgentFindings: [
+          "ST elevation pattern involves MULTIPLE vascular territories without reciprocal changes — more consistent with myocarditis/pericarditis than single-vessel MI",
+        ],
+      },
+    },
+    {
+      name: "Chest X-Ray",
+      type: "xray",
+      delayMs: 6000,
+      findings: {
+        summary: "Normal chest radiograph. Heart size normal. Clear lungs.",
+        details: [
+          "Heart size normal (CTR 48%)",
+          "Clear lung fields bilaterally",
+          "No pleural effusions",
+          "No pulmonary congestion",
+          "Mediastinum normal",
+        ],
+        normalFindings: [
+          "Normal cardiac silhouette",
+          "No acute cardiopulmonary disease",
+        ],
+      },
+    },
+    {
+      name: "Transthoracic Echocardiogram",
+      type: "ultrasound",
+      delayMs: 10000,
+      findings: {
+        summary:
+          "LVEF 66% preserved. Pericardium enlarged and hyperechogenic. Subtle inferoseptal strain changes.",
+        details: [
+          "LVEF 66% (Simpson's method — preserved systolic function)",
+          "Normal biventricular function",
+          "Preserved diastolic function",
+          "Longitudinal strain: –19.8% (borderline low in inferoseptal segments)",
+          "PARIETAL PERICARDIUM: enlarged and diffusely hyperechogenic (pericardial inflammation)",
+          "No pericardial effusion",
+          "No wall motion abnormalities",
+          "No valvular abnormalities",
+        ],
+        urgentFindings: [
+          "Pericardial thickening/hyperechogenicity consistent with acute pericarditis",
+          "Subtle strain abnormalities suggest early myocardial involvement",
+        ],
+      },
+    },
+    {
+      name: "Coronary Angiography",
+      type: "ct",
+      delayMs: 20000,
+      findings: {
+        summary:
+          "NORMAL CORONARY ARTERIES — no significant obstructive disease.",
+        details: [
+          "Left main: Normal",
+          "LAD: No significant stenosis",
+          "LCx: No significant stenosis",
+          "RCA: No significant stenosis",
+          "LVEF on ventriculography: 60%",
+          "No thrombus",
+          "IMPRESSION: Normal coronary arteries — ST elevation is NOT from coronary occlusion",
+        ],
+        urgentFindings: [
+          "Clean coronaries EXCLUDES acute MI — myocarditis/pericarditis is the diagnosis",
+        ],
+      },
+    },
+    {
+      name: "Cardiac MRI with Gadolinium",
+      type: "ct",
+      delayMs: 25000,
+      findings: {
+        summary:
+          "ACUTE MYOPERICARDITIS — non-ischemic LGE pattern confirms viral myocarditis. LVEF 52%.",
+        details: [
+          "LVEF 52% (mildly reduced — MRI more accurate than echo)",
+          "Normal-sized cardiac chambers",
+          "Preserved RV function",
+          "Mild hypokinesia of inferior wall (basal and medial segments)",
+          "MYOCARDIAL EDEMA on T2-weighted: inferior wall with inferoseptal extension",
+          "LATE GADOLINIUM ENHANCEMENT: basal, medial, inferior basal, inferoseptal segments",
+          "LGE pattern: SUBEPICARDIAL/MID-WALL (non-ischemic — CONFIRMS myocarditis)",
+          "Pericardial gadolinium uptake in basal region (active pericarditis)",
+          "No ischemic pattern (subendocardial) LGE",
+        ],
+        urgentFindings: [
+          "Non-ischemic LGE distribution CONFIRMS myocarditis, EXCLUDES MI",
+          "Combined myocardial edema + pericardial uptake = acute myopericarditis",
+        ],
+      },
+    },
+  ],
 };
 
 // ============================================
@@ -594,6 +705,25 @@ const SCENARIO_ECG: Record<string, ECGInterpretation> = {
     ],
     overallImpression:
       "Sinus tachycardia with classic acute right heart strain pattern (S1Q3T3, RBBB, RV strain T-wave inversions). Highly suggestive of significant pulmonary embolism. This ECG pattern + clinical presentation = PE until proven otherwise. Do NOT misinterpret as acute MI.",
+  },
+  "dengue-myocarditis-43m": {
+    rhythm: "Sinus rhythm",
+    rate: 95,
+    axis: "Normal",
+    prInterval: "160ms (normal)",
+    qrsDuration: "86ms (normal)",
+    qtcInterval: "420ms (normal)",
+    stSegment:
+      "ST elevation 2mm in leads II, III, aVF (inferior) AND V4-V6 (lateral). NO reciprocal ST depression anywhere.",
+    tWaves: "Normal T-wave morphology. No inversions. No hyperacute T-waves.",
+    urgentFindings: [
+      "ST elevation spans MULTIPLE vascular territories (inferior + lateral) — atypical for single-vessel MI",
+      "ABSENCE of reciprocal ST depression — strongly favors myocarditis/pericarditis over MI",
+      "No pathological Q waves — no completed infarction",
+      "CRITICAL: Diffuse ST elevation pattern + recent viral illness + normal coronaries = myocarditis, NOT MI",
+    ],
+    overallImpression:
+      "Sinus rhythm with diffuse ST elevation in inferior and lateral leads WITHOUT reciprocal changes. This pattern involves multiple coronary territories simultaneously, which is inconsistent with single-vessel ACS. In the context of recent dengue infection, this is highly suggestive of acute myopericarditis. MUST proceed to coronary angiography to exclude MI, then cardiac MRI to confirm myocarditis.",
   },
 };
 

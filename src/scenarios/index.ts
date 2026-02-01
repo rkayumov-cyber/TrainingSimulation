@@ -11,9 +11,11 @@ import { eclampsiaScenario } from "./eclampsia";
 import { cardiacArrestScenario } from "./cardiac-arrest";
 import { overdoseScenario } from "./overdose";
 import { masterPEScenario } from "./master-pe";
+import { dengueMycoarditisScenario } from "./dengue-myocarditis";
 
 export const scenarios: ScenarioDefinition[] = [
   masterPEScenario,
+  dengueMycoarditisScenario,
   sepsisScenario,
   miScenario,
   anaphylaxisScenario,
@@ -43,6 +45,7 @@ export function getScenarioById(id: string): ScenarioDefinition | undefined {
 
 export {
   masterPEScenario,
+  dengueMycoarditisScenario,
   sepsisScenario,
   miScenario,
   anaphylaxisScenario,

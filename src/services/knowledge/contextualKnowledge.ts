@@ -341,6 +341,44 @@ export const CLINICAL_GUIDELINES: ClinicalGuideline[] = [
     source:
       "ESC/ERS Guidelines on Acute PE 2019, AHA Scientific Statement: Management of Massive PE 2011, ACLS 2020",
   },
+  {
+    id: "dengue-myocarditis-management",
+    condition: "dengue-myocarditis",
+    keyActions: [
+      "Take TRAVEL HISTORY — this is the key to the correct diagnosis",
+      "12-lead ECG — look for diffuse ST elevation WITHOUT reciprocal changes (myocarditis pattern)",
+      "Order troponin and NT-proBNP (both elevated in myocarditis)",
+      "Order CRP/ESR — elevated inflammatory markers support myocarditis over MI",
+      "Order dengue serology (ELISA IgM, RT-PCR) if travel/endemic exposure",
+      "Order CBC — check platelets (normal = safe for NSAIDs; <100k = dengue hemorrhagic risk)",
+      "Transthoracic echocardiography — look for pericardial thickening, LV function, effusion",
+      "Coronary angiography — MUST rule out ACS when ECG shows ST elevation + elevated troponin",
+      "Cardiac MRI with gadolinium — GOLD STANDARD for myocarditis (non-ischemic LGE pattern)",
+      "Start NSAIDs + colchicine for myopericarditis (first-line per ESC guidelines)",
+      "Monitor for dengue warning signs: hemorrhage, thrombocytopenia, hepatomegaly, plasma leakage",
+      "Continuous cardiac monitoring — arrhythmia risk in myocarditis",
+    ],
+    sequenceRecommendations: [
+      "ABCs first — assess vitals, establish IV access, oxygen if needed",
+      "ECG within 5 minutes for any patient with chest pain",
+      "ASK ABOUT TRAVEL HISTORY early — this changes the entire differential",
+      "Check CRP before committing to ACS pathway — elevated CRP favors inflammatory cause",
+      "Echo before angiography if pericardial friction rub heard (supports myocarditis)",
+      "Angiography is required to EXCLUDE MI when ST elevation + elevated troponin present",
+      "Cardiac MRI after angiography confirms clean coronaries — establishes myocarditis diagnosis",
+      "Start anti-inflammatory treatment once myocarditis confirmed and platelets are safe",
+    ],
+    contraindications: [
+      "Do NOT treat as STEMI and rush to PCI — the coronaries are normal",
+      "Do NOT give anticoagulation (heparin) without angiographic evidence of thrombosis",
+      "NSAIDs are USUALLY avoided in dengue — but INDICATED for pericarditis if platelets >100k",
+      "Avoid aspirin as antiplatelet dose (81mg) — use HIGH-DOSE aspirin (750mg TID) for pericarditis",
+      "Avoid corticosteroids — increase recurrence risk in pericarditis (ESC Class III)",
+      "Do NOT discharge without cardiac MRI confirmation and cardiology follow-up",
+    ],
+    source:
+      "ESC Myocarditis Guidelines 2013, WHO Dengue Classification 2009, AHA Cardiac MRI Recommendations, PMC10402786",
+  },
 ];
 
 // Action to suggestion mapping
@@ -801,6 +839,18 @@ export function generatePostSimulationReview(
       "In arrest from PE: give thrombolysis during CPR and continue for 60-90 minutes",
       "Bedside echo can diagnose RV strain in seconds — faster than any lab or CT",
       "Always examine the legs — unilateral calf swelling is the smoking gun for DVT → PE",
+    ],
+    "dengue-myocarditis": [
+      "TRAVEL HISTORY is the single most important question — without it, you'll treat this as a heart attack",
+      "ST elevation + elevated troponin does NOT always mean MI — myocarditis is the great mimicker",
+      "Key ECG clue: DIFFUSE ST elevation across multiple vascular territories WITHOUT reciprocal depression = myocarditis, not MI",
+      "Normal CPK with elevated troponin is atypical for large MI — think myocarditis",
+      "Pericardial friction rub is pathognomonic for pericarditis — listen carefully, best heard leaning forward",
+      "Dengue myocarditis affects ~3-5% of dengue patients — it's NOT rare in endemic settings",
+      "NSAIDs are the treatment PARADOX: avoided in dengue (bleeding risk) but FIRST-LINE for pericarditis — safe if platelets >100k",
+      "Cardiac MRI with late gadolinium enhancement is the GOLD STANDARD — subepicardial/mid-wall pattern confirms myocarditis",
+      "Normal coronary angiography is the key pivot point — it EXCLUDES MI and redirects to myocarditis",
+      "WHO dengue warning signs: persistent vomiting, abdominal pain, mucosal bleeding, hepatomegaly, hematocrit rise",
     ],
   };
 

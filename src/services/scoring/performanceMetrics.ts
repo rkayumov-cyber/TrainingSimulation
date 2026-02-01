@@ -319,6 +319,173 @@ const SCENARIO_METRICS_CONFIG: Record<string, ScenarioMetricsConfig> = {
     ],
     expertAverageScore: 78,
   },
+  "dengue-myocarditis-43m": {
+    scenarioId: "dengue-myocarditis-43m",
+    correctDiagnosis: "Dengue Myopericarditis",
+    expectedDifferentials: [
+      "Acute Coronary Syndrome (STEMI)",
+      "Myocarditis / Myopericarditis",
+      "Acute Pericarditis",
+      "Aortic Dissection",
+      "Pulmonary Embolism",
+      "Dengue Myocarditis",
+    ],
+    keyDiagnosticClues: [
+      "Recent travel to dengue-endemic region (Bolivia)",
+      "Prodromal viral illness 5 days prior (fever, retro-orbital pain, arthralgias)",
+      "Positive dengue serology (IgM + RT-PCR)",
+      "Diffuse ST elevation without reciprocal depression",
+      "Elevated troponin with normal CPK (atypical for large MI)",
+      "Elevated CRP (inflammatory marker — favors myocarditis over MI)",
+      "Pericardial friction rub on auscultation",
+      "Normal coronary angiography (excludes MI)",
+      "Cardiac MRI: non-ischemic LGE pattern (confirms myocarditis)",
+      "Echo: pericardial thickening and hyperechogenicity",
+      "Normal platelet count (safe for NSAIDs)",
+    ],
+    optimalActionSequence: [
+      "check_vitals",
+      "establish_iv_access",
+      "order_ecg",
+      "check_heart_sounds",
+      "check_lung_sounds",
+      "take_travel_history",
+      "order_troponin",
+      "order_bnp",
+      "order_crp",
+      "order_cbc",
+      "order_bmp",
+      "order_dengue_serology",
+      "order_chest_xray",
+      "order_echo",
+      "order_coronary_angiography",
+      "order_cardiac_mri",
+      "administer_nsaids",
+      "administer_colchicine",
+      "consult_cardiology",
+      "continuous_monitoring",
+    ],
+    criticalTests: [
+      "order_ecg",
+      "order_troponin",
+      "order_crp",
+      "order_dengue_serology",
+      "order_echo",
+      "order_coronary_angiography",
+      "order_cardiac_mri",
+      "order_cbc",
+      "check_heart_sounds",
+    ],
+    unnecessaryTests: [
+      "order_ctpa",
+      "order_ct_head",
+      "order_d_dimer",
+      "order_fast_scan",
+      "order_lumbar_puncture",
+      "order_toxicology_screen",
+    ],
+    timeTargets: {
+      order_ecg: {
+        benchmark: 120,
+        thresholds: { A: 120, B: 180, C: 300, D: 600 },
+        label: "Time to ECG",
+        description: "12-lead ECG within 2 minutes for chest pain with ST changes",
+      },
+      take_travel_history: {
+        benchmark: 300,
+        thresholds: { A: 300, B: 480, C: 600, D: 900 },
+        label: "Time to Travel History",
+        description: "Travel history is THE key question — unlocks the correct diagnosis",
+      },
+      check_heart_sounds: {
+        benchmark: 180,
+        thresholds: { A: 180, B: 300, C: 480, D: 600 },
+        label: "Time to Cardiac Auscultation",
+        description: "Pericardial friction rub is pathognomonic — must listen carefully",
+      },
+      order_troponin: {
+        benchmark: 180,
+        thresholds: { A: 180, B: 300, C: 480, D: 600 },
+        label: "Time to Troponin",
+        description: "Cardiac biomarkers essential for ST elevation workup",
+      },
+      order_crp: {
+        benchmark: 300,
+        thresholds: { A: 300, B: 480, C: 600, D: 900 },
+        label: "Time to CRP",
+        description: "Inflammatory markers differentiate myocarditis from MI",
+      },
+      order_dengue_serology: {
+        benchmark: 600,
+        thresholds: { A: 600, B: 900, C: 1200, D: 1800 },
+        label: "Time to Dengue Serology",
+        description: "Confirms dengue etiology — requires travel history first",
+      },
+      order_echo: {
+        benchmark: 600,
+        thresholds: { A: 600, B: 900, C: 1200, D: 1800 },
+        label: "Time to Echocardiogram",
+        description: "Identifies pericardial thickening and LV function",
+      },
+      order_coronary_angiography: {
+        benchmark: 900,
+        thresholds: { A: 900, B: 1200, C: 1800, D: 2400 },
+        label: "Time to Angiography Decision",
+        description: "Must rule out ACS with ST elevation + elevated troponin",
+      },
+      order_cardiac_mri: {
+        benchmark: 1200,
+        thresholds: { A: 1200, B: 1800, C: 2400, D: 3600 },
+        label: "Time to Cardiac MRI Order",
+        description: "Gold standard for myocarditis — should follow clean angiography",
+      },
+    },
+    criticalDecisionPoints: [
+      {
+        id: "cdp-travel-history",
+        description: "Ask about travel history to endemic region",
+        correctDecision: "Take travel history early — dengue exposure is the diagnostic key",
+        impact: "life-saving",
+        feedback: "Travel history to a dengue-endemic region (Bolivia) completely changes the differential diagnosis. Without this information, the case appears to be straightforward STEMI. The prodromal viral illness + endemic travel + ST elevation = viral myocarditis must be considered.",
+      },
+      {
+        id: "cdp-recognize-diffuse-st",
+        description: "Recognize diffuse ST elevation pattern as non-ischemic",
+        correctDecision: "Identify that ST elevation in multiple vascular territories WITHOUT reciprocal changes suggests myocarditis/pericarditis, not MI",
+        impact: "critical",
+        feedback: "STEMI from coronary occlusion typically shows ST elevation in one vascular territory with reciprocal depression in opposing leads. Diffuse ST elevation across inferior + lateral leads WITHOUT reciprocal changes is the ECG hallmark of myocarditis/pericarditis.",
+      },
+      {
+        id: "cdp-not-treat-as-mi",
+        description: "Avoid treating as STEMI before excluding myocarditis",
+        correctDecision: "Do NOT rush to antiplatelet/anticoagulation therapy — proceed to angiography to differentiate MI from myocarditis",
+        impact: "critical",
+        feedback: "Treating myocarditis as MI leads to unnecessary anticoagulation, antiplatelet therapy, and potentially harmful cath lab activation. The correct approach is urgent angiography to define anatomy, then cardiac MRI if coronaries are clean.",
+      },
+      {
+        id: "cdp-order-angiography",
+        description: "Order coronary angiography to exclude MI",
+        correctDecision: "Proceed to angiography — cannot reliably differentiate MI from myocarditis without visualizing coronary anatomy",
+        impact: "life-saving",
+        feedback: "When ECG shows ST elevation and troponin is elevated, coronary angiography is MANDATORY to exclude acute MI — even when myocarditis is suspected. Normal coronaries are the pivotal finding that redirects management.",
+      },
+      {
+        id: "cdp-cardiac-mri",
+        description: "Order cardiac MRI after clean angiography",
+        correctDecision: "Order cardiac MRI with gadolinium to confirm myocarditis diagnosis and assess extent of inflammation",
+        impact: "critical",
+        feedback: "Cardiac MRI is the gold standard for non-invasive diagnosis of myocarditis (ESC recommendation). Late gadolinium enhancement pattern differentiates: subendocardial = ischemic (MI), subepicardial/mid-wall = non-ischemic (myocarditis).",
+      },
+      {
+        id: "cdp-nsaid-dengue-paradox",
+        description: "Navigate the NSAID/dengue treatment paradox",
+        correctDecision: "Start NSAIDs + colchicine for myopericarditis — safe because platelets are normal (>100k)",
+        impact: "important",
+        feedback: "NSAIDs are typically AVOIDED in dengue due to hemorrhage risk. However, for dengue myopericarditis, NSAIDs are FIRST-LINE treatment per ESC guidelines. The key safety check is platelet count: if >100,000 (as in this case at 263,000), the benefit of treating pericarditis outweighs the bleeding risk.",
+      },
+    ],
+    expertAverageScore: 72,
+  },
 };
 
 // ============================================================================
@@ -691,6 +858,18 @@ function inferClueIdentified(clue: string, actions: Set<string>): boolean {
     "CTPA showing saddle embolus": ["order_ctpa"],
     "Echo McConnell sign": ["order_echo", "bedside_echo"],
     "ABG showing respiratory alkalosis": ["order_abg"],
+    // Dengue myocarditis clues
+    "Recent travel to dengue-endemic region": ["take_travel_history"],
+    "Prodromal viral illness": ["take_travel_history"],
+    "Positive dengue serology": ["order_dengue_serology"],
+    "Diffuse ST elevation without reciprocal": ["order_ecg"],
+    "Elevated troponin with normal CPK": ["order_troponin"],
+    "Elevated CRP": ["order_crp"],
+    "Pericardial friction rub": ["check_heart_sounds"],
+    "Normal coronary angiography": ["order_coronary_angiography"],
+    "Cardiac MRI: non-ischemic LGE": ["order_cardiac_mri"],
+    "Echo: pericardial thickening": ["order_echo", "bedside_echo"],
+    "Normal platelet count": ["order_cbc"],
   };
 
   for (const [key, requiredActions] of Object.entries(clueToActions)) {
@@ -722,6 +901,15 @@ function inferDifferentials(actions: string[]): string[] {
   }
   if (set.has("order_echo") || set.has("bedside_echo")) {
     diffs.push("Cardiac Tamponade / RV Failure");
+  }
+  if (set.has("order_dengue_serology") || set.has("take_travel_history")) {
+    diffs.push("Dengue Myocarditis");
+  }
+  if (set.has("order_cardiac_mri") || set.has("order_crp")) {
+    diffs.push("Myocarditis / Pericarditis");
+  }
+  if (set.has("order_coronary_angiography")) {
+    diffs.push("Acute Coronary Syndrome / MI");
   }
   return [...new Set(diffs)];
 }
@@ -795,6 +983,43 @@ function evaluateCriticalDecision(
       return {
         wasCorrect: set.has("start_cpr"),
         actualDecision: set.has("start_cpr") ? "CPR initiated" : "Arrest management not documented",
+      };
+    // Dengue myocarditis decisions
+    case "cdp-travel-history":
+      return {
+        wasCorrect: set.has("take_travel_history"),
+        actualDecision: set.has("take_travel_history") ? "Travel history obtained" : "Travel history not taken",
+      };
+    case "cdp-recognize-diffuse-st":
+      return {
+        wasCorrect: set.has("order_ecg") && (set.has("order_crp") || set.has("order_echo") || set.has("order_coronary_angiography")),
+        actualDecision: set.has("order_ecg") ?
+          (set.has("order_coronary_angiography") ? "ECG obtained, pursued angiography" : "ECG obtained, non-ischemic workup started") :
+          "ECG not ordered",
+      };
+    case "cdp-not-treat-as-mi": {
+      const treatedAsMI = set.has("give_aspirin") || set.has("administer_heparin") || set.has("administer_tpa");
+      return {
+        wasCorrect: !treatedAsMI,
+        actualDecision: treatedAsMI ? "Treated as MI (incorrect — aspirin/heparin/tPA given)" : "Did not commit to MI treatment pathway",
+      };
+    }
+    case "cdp-order-angiography":
+      return {
+        wasCorrect: set.has("order_coronary_angiography"),
+        actualDecision: set.has("order_coronary_angiography") ? "Coronary angiography ordered" : "Angiography not ordered",
+      };
+    case "cdp-cardiac-mri":
+      return {
+        wasCorrect: set.has("order_cardiac_mri"),
+        actualDecision: set.has("order_cardiac_mri") ? "Cardiac MRI ordered" : "Cardiac MRI not ordered",
+      };
+    case "cdp-nsaid-dengue-paradox":
+      return {
+        wasCorrect: set.has("administer_nsaids") || set.has("administer_colchicine") || set.has("administer_aspirin_hd"),
+        actualDecision: set.has("administer_nsaids") ? "NSAIDs started for myopericarditis" :
+          set.has("administer_colchicine") ? "Colchicine started" :
+          set.has("administer_aspirin_hd") ? "High-dose aspirin started" : "Anti-inflammatory treatment not started",
       };
     default:
       return { wasCorrect: false, actualDecision: null };

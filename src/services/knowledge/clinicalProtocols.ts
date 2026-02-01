@@ -598,6 +598,90 @@ export const DRUG_DOSING_REFERENCE: DrugDosing[] = [
       "Balanced crystalloid (Ringer's lactate) may be preferred for large volumes",
     ],
   },
+  // ANTI-INFLAMMATORY / DENGUE MYOCARDITIS
+  {
+    name: "Colchicine",
+    genericName: "colchicine",
+    category: "Anti-inflammatory (Pericarditis)",
+    indications: [
+      "Acute pericarditis (first-line adjunct to NSAIDs)",
+      "Recurrent pericarditis prevention",
+      "Post-pericardiotomy syndrome",
+    ],
+    adultDose:
+      "Acute pericarditis: 0.5mg BID x3 months (>70kg) or 0.5mg daily (<70kg). Loading: 1mg then 0.5mg 1h later on day 1",
+    route: "PO",
+    frequency: "BID (>70kg) or daily (<70kg)",
+    maxDose: "1.5mg/day",
+    onsetTime: "24-48 hours for anti-inflammatory effect",
+    duration: "3 months for acute pericarditis; 6 months for recurrent",
+    contraindications: [
+      "Severe hepatic impairment",
+      "Severe renal impairment (CrCl <30 — dose adjust)",
+      "Concurrent strong CYP3A4 inhibitors (clarithromycin, ketoconazole)",
+      "Blood dyscrasias",
+    ],
+    sideEffects: [
+      "Diarrhea (most common — up to 10%)",
+      "Nausea/vomiting",
+      "Abdominal pain",
+      "Bone marrow suppression (rare, dose-related)",
+    ],
+    monitoringParameters: [
+      "GI symptoms",
+      "CBC (prolonged use)",
+      "Renal function",
+      "Hepatic function",
+    ],
+    nursingConsiderations: [
+      "ESC first-line ADJUNCT to NSAIDs for acute pericarditis — reduces recurrence by 50%",
+      "Take with food to reduce GI side effects",
+      "In dengue: benefits outweigh hemorrhage risk when pericarditis confirmed",
+      "Do NOT use with grapefruit juice (inhibits metabolism)",
+    ],
+  },
+  {
+    name: "Ibuprofen (High-dose for Pericarditis)",
+    genericName: "ibuprofen",
+    category: "NSAID (Anti-inflammatory)",
+    indications: [
+      "Acute pericarditis (first-line treatment)",
+      "Myopericarditis",
+      "Pain and inflammation",
+    ],
+    adultDose:
+      "Pericarditis: 600mg TID for 1-2 weeks, then taper over 2-4 weeks. Alternative: Aspirin 750-1000mg TID",
+    route: "PO",
+    frequency: "TID (every 8 hours)",
+    maxDose: "2400mg/day",
+    onsetTime: "30-60 minutes",
+    duration: "4-6 hours per dose; treatment course 1-4 weeks",
+    contraindications: [
+      "Active GI bleeding or peptic ulcer",
+      "Severe renal impairment",
+      "Third trimester pregnancy",
+      "Post-CABG (within 10-14 days)",
+      "Dengue with thrombocytopenia (<100,000) — relative contraindication",
+    ],
+    sideEffects: [
+      "GI bleeding (especially in dengue)",
+      "Renal impairment",
+      "Cardiovascular risk (prolonged use)",
+      "Platelet dysfunction",
+    ],
+    monitoringParameters: [
+      "Platelet count (critical in dengue)",
+      "GI symptoms and stool guaiac",
+      "Renal function",
+      "CRP (response to treatment)",
+    ],
+    nursingConsiderations: [
+      "In dengue myocarditis: NSAIDs are INDICATED despite general dengue caution — benefits outweigh risks when platelets are normal",
+      "Co-prescribe PPI (omeprazole) for GI protection",
+      "Monitor platelet count closely — discontinue if <100,000",
+      "Aspirin 750mg TID is the alternative in the source case report",
+    ],
+  },
 ];
 
 // ============================================
@@ -1539,6 +1623,76 @@ export const DIFFERENTIAL_DIAGNOSES: DifferentialDiagnosis[] = [
         ruledOutBy: [
           "No allergen exposure",
           "No skin/respiratory involvement",
+        ],
+      },
+    ],
+  },
+  {
+    presentation: "ST Elevation with Chest Pain",
+    scenarioIds: ["mi", "dengue-myocarditis", "cardiac-arrest"],
+    differentials: [
+      {
+        condition: "STEMI (Acute MI)",
+        likelihood: "high",
+        keyFeatures: [
+          "Crushing chest pain with radiation",
+          "ST elevation in contiguous leads with reciprocal depression",
+          "Elevated troponin with rising pattern",
+          "Risk factors: age, smoking, diabetes, hypertension, family history",
+        ],
+        ruledOutBy: [
+          "Normal coronary angiography",
+          "Diffuse ST elevation without reciprocal changes",
+          "Young patient without cardiac risk factors",
+        ],
+      },
+      {
+        condition: "Acute Myocarditis",
+        likelihood: "moderate",
+        keyFeatures: [
+          "Recent viral illness (1-4 weeks prior)",
+          "Diffuse ST elevation (multiple territories)",
+          "Elevated troponin but normal CPK ratio",
+          "Pericardial friction rub",
+          "Cardiac MRI: subepicardial/mid-wall LGE",
+        ],
+        ruledOutBy: [
+          "Coronary occlusion on angiography",
+          "No preceding illness",
+          "Subendocardial LGE pattern on MRI (ischemic)",
+        ],
+      },
+      {
+        condition: "Acute Pericarditis",
+        likelihood: "moderate",
+        keyFeatures: [
+          "Diffuse concave ST elevation",
+          "PR depression",
+          "Pericardial friction rub",
+          "Pleuritic chest pain (worse with inspiration, better leaning forward)",
+          "Pericardial effusion on echo",
+        ],
+        ruledOutBy: [
+          "Reciprocal ST depression (suggests MI)",
+          "Rising troponin (suggests myo- not just pericarditis)",
+          "Regional wall motion abnormality (suggests MI)",
+        ],
+      },
+      {
+        condition: "Dengue Myopericarditis",
+        likelihood: "low",
+        keyFeatures: [
+          "Recent dengue infection (confirmed serology)",
+          "Travel to endemic region",
+          "Prodromal fever, retro-orbital pain, arthralgias",
+          "ST elevation with pericardial rub",
+          "Normal coronary angiography",
+          "Cardiac MRI with non-ischemic LGE pattern",
+        ],
+        ruledOutBy: [
+          "No dengue exposure or travel history",
+          "Negative dengue serology",
+          "Coronary occlusion on angiography",
         ],
       },
     ],
