@@ -1,6 +1,7 @@
-import { useContext, useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Pill, TrendingUp, Clock } from "lucide-react";
-import { SimulationContext } from "../../context/SimulationContextDef";
+import { useSimulation } from "../../context";
+import { usePharmacology } from "../../context";
 import type { ActiveDrugEffect } from "../../types/enhanced";
 
 function DrugEffectItem({ effect }: { effect: ActiveDrugEffect }) {
@@ -114,10 +115,8 @@ function DrugEffectItem({ effect }: { effect: ActiveDrugEffect }) {
 }
 
 export function DrugEffectsPanel() {
-  const context = useContext(SimulationContext);
-  if (!context) return null;
-
-  const { activeDrugEffects, state } = context;
+  const { state } = useSimulation();
+  const { activeDrugEffects } = usePharmacology();
 
   if (!state.isRunning) {
     return (

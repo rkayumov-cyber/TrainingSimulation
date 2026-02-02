@@ -17,8 +17,10 @@ import { ImageLibraryPage } from "./components/manager/ImageLibraryPage";
 import { DoctorHomePage } from "./components/doctor/DoctorHomePage";
 import { DemoSelector, DemoWalkthroughPage } from "./components/demo";
 import { getAllCustomScenarios, importScenario } from "./services/persistence";
+import { parseImportedScenario } from "./services/persistence/importValidator";
 import { registerCustomScenarios } from "./scenarios";
 import { v4 as uuidv4 } from "uuid";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 
 type ActivePage =
   | "simulation"
@@ -66,12 +68,25 @@ function SimulationApp({
           onNavigate(isManager ? "manager" : "doctor-home")
         }
       />
-      <SplitScreen left={<PatientPanel />} right={<MonitorPanel />} />
+      <SplitScreen
+        left={
+          <ErrorBoundary name="PatientPanel">
+            <PatientPanel />
+          </ErrorBoundary>
+        }
+        right={
+          <ErrorBoundary name="MonitorPanel">
+            <MonitorPanel />
+          </ErrorBoundary>
+        }
+      />
       {showDebrief && (
-        <DebriefingPanel
-          onReset={handleReset}
-          onViewDashboard={() => onNavigate("dashboard")}
-        />
+        <ErrorBoundary name="DebriefingPanel">
+          <DebriefingPanel
+            onReset={handleReset}
+            onViewDashboard={() => onNavigate("dashboard")}
+          />
+        </ErrorBoundary>
       )}
     </div>
   );
@@ -134,23 +149,33 @@ function AuthenticatedApp() {
     input.onchange = async (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (!file) return;
-      const text = await file.text();
-      const data = JSON.parse(text);
-      const newId = `custom-${uuidv4().slice(0, 8)}`;
-      data.scenario.id = newId;
-      data.scenario.createdAt = Date.now();
-      data.scenario.updatedAt = Date.now();
-      for (const att of data.attachments || []) {
-        att.scenarioId = newId;
-        att.id = uuidv4();
+      try {
+        const text = await file.text();
+        const raw = parseImportedScenario(text);
+        // Safe cast: shape validated by parseImportedScenario
+        const data = raw as unknown as Parameters<typeof importScenario>[0];
+        const newId = `custom-${uuidv4().slice(0, 8)}`;
+        data.scenario.id = newId;
+        data.scenario.createdAt = Date.now();
+        data.scenario.updatedAt = Date.now();
+        for (const att of data.attachments || []) {
+          att.scenarioId = newId;
+          att.id = uuidv4();
+        }
+        if (data.benchmark) {
+          data.benchmark.scenarioId = newId;
+        }
+        await importScenario(data);
+        const customs = await getAllCustomScenarios();
+        registerCustomScenarios(customs);
+        setActivePage("manager");
+      } catch (err) {
+        window.alert(
+          err instanceof Error
+            ? err.message
+            : "Failed to import scenario file.",
+        );
       }
-      if (data.benchmark) {
-        data.benchmark.scenarioId = newId;
-      }
-      await importScenario(data);
-      const customs = await getAllCustomScenarios();
-      registerCustomScenarios(customs);
-      setActivePage("manager");
     };
     input.click();
   }, []);
@@ -192,17 +217,19 @@ function AuthenticatedApp() {
 
   if (activePage === "builder" && isManager) {
     return (
-      <ScenarioBuilderPage
-        editScenarioId={editScenarioId}
-        templateId={templateId}
-        onBack={() => handleNavigate("manager")}
-        onSaved={() => {
-          getAllCustomScenarios().then((customs) => {
-            registerCustomScenarios(customs);
-            handleNavigate("manager");
-          });
-        }}
-      />
+      <ErrorBoundary name="ScenarioBuilder">
+        <ScenarioBuilderPage
+          editScenarioId={editScenarioId}
+          templateId={templateId}
+          onBack={() => handleNavigate("manager")}
+          onSaved={() => {
+            getAllCustomScenarios().then((customs) => {
+              registerCustomScenarios(customs);
+              handleNavigate("manager");
+            });
+          }}
+        />
+      </ErrorBoundary>
     );
   }
 

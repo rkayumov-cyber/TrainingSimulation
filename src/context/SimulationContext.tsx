@@ -20,10 +20,7 @@ import type {
 import type {
   ClinicalDecisionScore,
   PatientState,
-  ActiveDrugEffect,
-  DynamicLabValue,
   TaskDelegation,
-  AdvisoryMessage,
 } from "../types/enhanced";
 import type {
   DifficultyLevel,
@@ -53,6 +50,8 @@ import { getScenarioById } from "../scenarios";
 import { SimulationContext } from "./SimulationContextDef";
 import { saveSession, logActivity } from "../services/persistence";
 import { v4 as uuidv4 } from "uuid";
+import { createSimulationLoop } from "../services/simulation/simulationLoop";
+import type { SimulationLoop } from "../services/simulation/simulationLoop";
 
 // Import new enhanced services
 import {
@@ -89,14 +88,16 @@ import {
   markComplicationTriggered,
 } from "../services/complications";
 import { getImagingManager, resetImagingManager } from "../services/imaging";
-import type { ImagingStudy } from "../types/imaging";
 import type { BenchmarkResult } from "../types/scenarioBuilder";
 import { getBenchmarkByScenario } from "../services/persistence";
 import { gradeSession } from "../services/benchmark";
 import {
-  generateAdvisoryMessages,
   resetAdvisoryCooldowns,
 } from "../services/team/advisoryService";
+import { PharmacologyProvider } from "./PharmacologyContext";
+import { LabsProvider } from "./LabsContext";
+import { TeamProvider } from "./TeamContext";
+import { ImagingProvider } from "./ImagingContext";
 
 function createInitialSimulationStateForScenario(
   scenario: ScenarioDefinition,
@@ -108,7 +109,9 @@ function createInitialSimulationStateForScenario(
   return createInitialState(scenario.id, scenario.baselineVitals, initialRules);
 }
 
-// Enhanced context value type
+// Enhanced context value type (extracted: activeDrugEffects→PharmacologyContext,
+// dynamicLabs→LabsContext, advisoryMessages/acceptAdvisory/dismissAdvisory→TeamContext,
+// imagingStudies/orderImaging→ImagingContext)
 export interface EnhancedSimulationContextValue {
   state: SimulationState;
   scenario: ScenarioDefinition;
@@ -125,8 +128,6 @@ export interface EnhancedSimulationContextValue {
   // Enhanced features
   clinicalScore: ClinicalDecisionScore | null;
   patientState: PatientState | null;
-  activeDrugEffects: ActiveDrugEffect[];
-  dynamicLabs: DynamicLabValue[];
   teamTasks: TaskDelegation[];
   contextualHints: string[];
   actionTimestamps: Record<string, number>;
@@ -138,15 +139,8 @@ export interface EnhancedSimulationContextValue {
   checklist: CompetencyChecklist | null;
   checklistResult: ChecklistResult | null;
   complications: ComplicationRule[];
-  // P2: Imaging
-  imagingStudies: ImagingStudy[];
-  orderImaging: (studyId: string) => void;
   // Benchmark
   benchmarkResult: BenchmarkResult | null;
-  // Advisory mode
-  advisoryMessages: AdvisoryMessage[];
-  acceptAdvisory: (id: string) => void;
-  dismissAdvisory: (id: string) => void;
 }
 
 export function SimulationProvider({
@@ -168,20 +162,12 @@ export function SimulationProvider({
     createInitialSimulationStateForScenario(s),
   );
   const [elapsedTime, setElapsedTime] = useState(0);
-  const timerRef = useRef<number | null>(null);
-  const deteriorationRef = useRef<number | null>(null);
-  const vitalsAnimationRef = useRef<number | null>(null);
-  const drugEffectsRef = useRef<number | null>(null);
-  const labsUpdateRef = useRef<number | null>(null);
+  const loopRef = useRef<SimulationLoop | null>(null);
 
   // Enhanced state
   const [clinicalScore, setClinicalScore] =
     useState<ClinicalDecisionScore | null>(null);
   const [patientState, setPatientState] = useState<PatientState | null>(null);
-  const [activeDrugEffects, setActiveDrugEffects] = useState<
-    ActiveDrugEffect[]
-  >([]);
-  const [dynamicLabs, setDynamicLabs] = useState<DynamicLabValue[]>([]);
   const [teamTasks, setTeamTasks] = useState<TaskDelegation[]>([]);
   const [contextualHints, setContextualHints] = useState<string[]>([]);
   const [actionTimestamps, setActionTimestamps] = useState<
@@ -191,26 +177,30 @@ export function SimulationProvider({
   // Session persistence state
   const [lastSessionId, setLastSessionId] = useState<string | null>(null);
   const vitalsSnapshotsRef = useRef<VitalsSnapshot[]>([]);
-  const vitalsSnapshotTimerRef = useRef<number | null>(null);
 
   // P1: Difficulty state
   const [difficulty, setDifficulty] = useState<DifficultyLevel>("intermediate");
   const [checklist, setChecklist] = useState<CompetencyChecklist | null>(null);
   const [complications, setComplications] = useState<ComplicationRule[]>([]);
-  const complicationTimerRef = useRef<number | null>(null);
   const fluidCountRef = useRef(0);
 
-  // P2: Imaging state
-  const [imagingStudies, setImagingStudies] = useState<ImagingStudy[]>([]);
   // Benchmark state
   const [benchmarkResult, setBenchmarkResult] = useState<BenchmarkResult | null>(null);
 
-  // Advisory mode state
-  const [advisoryMessages, setAdvisoryMessages] = useState<AdvisoryMessage[]>([]);
-  const advisoryTimerRef = useRef<number | null>(null);
-
   // Previous vitals for deterioration detection
   const previousVitalsRef = useRef<Vitals | null>(null);
+
+  // Latest-state refs for the simulation loop (game-loop-in-React pattern)
+  const stateRef = useRef(state);
+  const scenarioValRef = useRef(scenario);
+  const patientStateRef = useRef(patientState);
+  const actionTimestampsRef = useRef(actionTimestamps);
+  const difficultyModifiersRef = useRef<DifficultyModifiers | null>(null);
+
+  useEffect(() => { stateRef.current = state; });
+  useEffect(() => { scenarioValRef.current = scenario; });
+  useEffect(() => { patientStateRef.current = patientState; });
+  useEffect(() => { actionTimestampsRef.current = actionTimestamps; });
 
   // Initialize managers on scenario change using a ref to track initialization
   const scenarioRef = useRef(scenario.id);
@@ -232,12 +222,10 @@ export function SimulationProvider({
         scenario.id,
         scenario.baselineVitals,
       );
-      const newLabs = labManager.getAllLabs();
 
       // Schedule updates in a microtask to avoid synchronous setState in effect
       queueMicrotask(() => {
         setPatientState(newPatientState);
-        setDynamicLabs(newLabs);
         setActionTimestamps({});
         setClinicalScore(null);
         setContextualHints([]);
@@ -245,28 +233,46 @@ export function SimulationProvider({
     }
   }, [scenario, patientState]);
 
-  // Main simulation timer
+  // Unified simulation loop — replaces 8 individual setInterval timers
   useEffect(() => {
-    if (state.isRunning && !state.isPaused) {
-      timerRef.current = window.setInterval(() => {
-        setElapsedTime(Date.now() - state.startTime);
-      }, 1000);
-    } else if (timerRef.current) {
-      clearInterval(timerRef.current);
+    if (!state.isRunning) {
+      if (loopRef.current) {
+        loopRef.current.stop();
+        loopRef.current = null;
+      }
+      return;
     }
 
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, [state.isRunning, state.isPaused, state.startTime]);
+    const loop = createSimulationLoop();
+    loopRef.current = loop;
 
-  // Deterioration check timer
-  useEffect(() => {
-    if (state.isRunning && !state.isPaused) {
-      deteriorationRef.current = window.setInterval(() => {
+    // 1. Main timer (1000ms) — elapsed time
+    loop.registerHandler({
+      id: "main-timer",
+      intervalMs: 1000,
+      callback: () => {
+        setElapsedTime(Date.now() - stateRef.current.startTime);
+      },
+    });
+
+    // 2. Vitals animation (500ms) — smooth lerp
+    loop.registerHandler({
+      id: "vitals-animation",
+      intervalMs: 500,
+      callback: () => {
+        dispatch({ type: "TICK_VITALS" });
+      },
+    });
+
+    // 3. Deterioration (5000ms) — patient decline checks
+    loop.registerHandler({
+      id: "deterioration",
+      intervalMs: 5000,
+      callback: () => {
+        const s = stateRef.current;
         const checks = checkDeteriorationRules(
-          state.deteriorationRules,
-          state.actionsTaken,
+          s.deteriorationRules,
+          s.actionsTaken,
           Date.now(),
         );
 
@@ -287,12 +293,11 @@ export function SimulationProvider({
               },
             });
 
-            // Generate patient deterioration response
-            if (patientState && previousVitalsRef.current) {
+            if (patientStateRef.current && previousVitalsRef.current) {
               const alert = generateDeteriorationAlert(
                 previousVitalsRef.current,
-                state.vitals,
-                patientState,
+                s.vitals,
+                patientStateRef.current,
               );
               if (alert) {
                 dispatch({
@@ -304,110 +309,45 @@ export function SimulationProvider({
           }
         }
 
-        // Store previous vitals
-        previousVitalsRef.current = { ...state.vitals };
-      }, 5000);
-    } else if (deteriorationRef.current) {
-      clearInterval(deteriorationRef.current);
-    }
+        previousVitalsRef.current = { ...s.vitals };
+      },
+    });
 
-    return () => {
-      if (deteriorationRef.current) clearInterval(deteriorationRef.current);
-    };
-  }, [
-    state.isRunning,
-    state.isPaused,
-    state.deteriorationRules,
-    state.actionsTaken,
-    state.vitals,
-    patientState,
-  ]);
-
-  // Vitals animation timer with drug effects
-  useEffect(() => {
-    if (state.isRunning && !state.isPaused) {
-      vitalsAnimationRef.current = window.setInterval(() => {
-        dispatch({ type: "TICK_VITALS" });
-      }, 500);
-    } else if (vitalsAnimationRef.current) {
-      clearInterval(vitalsAnimationRef.current);
-    }
-
-    return () => {
-      if (vitalsAnimationRef.current) clearInterval(vitalsAnimationRef.current);
-    };
-  }, [state.isRunning, state.isPaused]);
-
-  // Drug effects update timer
-  useEffect(() => {
-    if (state.isRunning && !state.isPaused) {
-      drugEffectsRef.current = window.setInterval(() => {
-        const drugManager = getDrugEffectManager();
-        const effects = drugManager.calculateTotalEffects(
-          Date.now(),
-          scenario.baselineVitals,
-        );
-
-        // Apply drug effects to vitals
-        if (
-          Object.keys(effects).some((k) => effects[k as keyof Vitals] !== 0)
-        ) {
-          const vitalUpdates: Partial<Vitals> = {};
-          for (const [key, value] of Object.entries(effects)) {
-            if (value !== 0) {
-              const baseValue = scenario.baselineVitals[key as keyof Vitals];
-              vitalUpdates[key as keyof Vitals] = baseValue + value;
-            }
-          }
-          dispatch({ type: "SET_TARGET_VITALS", payload: vitalUpdates });
-        }
-
-        setActiveDrugEffects(drugManager.getActiveEffects());
-      }, 2000);
-    } else if (drugEffectsRef.current) {
-      clearInterval(drugEffectsRef.current);
-    }
-
-    return () => {
-      if (drugEffectsRef.current) clearInterval(drugEffectsRef.current);
-    };
-  }, [state.isRunning, state.isPaused, scenario.baselineVitals]);
-
-  // Dynamic labs update timer
-  useEffect(() => {
-    if (state.isRunning && !state.isPaused) {
-      labsUpdateRef.current = window.setInterval(() => {
-        const labManager = getDynamicLabManager();
-        labManager.updateLabs(Date.now());
-        setDynamicLabs(labManager.getAllLabs());
-      }, 30000); // Update every 30 seconds
-    } else if (labsUpdateRef.current) {
-      clearInterval(labsUpdateRef.current);
-    }
-
-    return () => {
-      if (labsUpdateRef.current) clearInterval(labsUpdateRef.current);
-    };
-  }, [state.isRunning, state.isPaused]);
-
-  // Vitals snapshot timer - capture every 10 seconds for debrief timeline
-  useEffect(() => {
-    if (state.isRunning && !state.isPaused) {
-      vitalsSnapshotTimerRef.current = window.setInterval(() => {
+    // 5. Vitals snapshot (10000ms) — debrief timeline
+    loop.registerHandler({
+      id: "vitals-snapshot",
+      intervalMs: 10000,
+      callback: () => {
         vitalsSnapshotsRef.current.push({
           timestamp: Date.now(),
-          vitals: { ...state.vitals },
+          vitals: { ...stateRef.current.vitals },
         });
-      }, 10000);
-    } else if (vitalsSnapshotTimerRef.current) {
-      clearInterval(vitalsSnapshotTimerRef.current);
+      },
+    });
+
+    if (state.isPaused) {
+      // Don't start the loop if already paused
+    } else {
+      loop.start();
     }
 
     return () => {
-      if (vitalsSnapshotTimerRef.current)
-        clearInterval(vitalsSnapshotTimerRef.current);
+      loop.stop();
+      if (loopRef.current === loop) {
+        loopRef.current = null;
+      }
     };
-  }, [state.isRunning, state.isPaused, state.vitals]);
+  }, [state.isRunning]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Handle pause/resume via the loop
+  useEffect(() => {
+    if (!loopRef.current || !state.isRunning) return;
+    if (state.isPaused) {
+      loopRef.current.pause();
+    } else {
+      loopRef.current.resume();
+    }
+  }, [state.isPaused, state.isRunning]);
 
   // Compute difficulty modifiers as derived state
   const difficultyModifiers = useMemo(() => {
@@ -429,132 +369,13 @@ export function SimulationProvider({
     state.score.communicationErrors,
     elapsedTime,
   ]);
+  useEffect(() => { difficultyModifiersRef.current = difficultyModifiers; }, [difficultyModifiers]);
 
   // Compute checklist result as derived state
   const checklistResult = useMemo(() => {
     if (!checklist || checklist.items.length === 0) return null;
     return calculateChecklistResult(checklist);
   }, [checklist]);
-
-  // Complication timer — checks delayed-action triggers periodically
-  useEffect(() => {
-    if (
-      state.isRunning &&
-      !state.isPaused &&
-      difficultyModifiers.complicationsEnabled
-    ) {
-      complicationTimerRef.current = window.setInterval(() => {
-        setComplications((prevRules) => {
-          const results = checkComplications(
-            prevRules,
-            state.actionsTaken,
-            actionTimestamps,
-            state.startTime,
-            fluidCountRef.current,
-          );
-          let updatedRules = prevRules;
-          for (const r of results) {
-            if (r.shouldTrigger) {
-              updatedRules = markComplicationTriggered(updatedRules, r.rule.id);
-              if (Object.keys(r.rule.vitalsEffect).length > 0) {
-                dispatch({
-                  type: "SET_TARGET_VITALS",
-                  payload: r.rule.vitalsEffect,
-                });
-              }
-              if (r.rule.feedbackMessage) {
-                dispatch({
-                  type: "ADD_FEEDBACK",
-                  payload: { type: "error", message: r.rule.feedbackMessage },
-                });
-              }
-              if (r.rule.patientMessage) {
-                dispatch({
-                  type: "ADD_CHAT_MESSAGE",
-                  payload: {
-                    sender: "patient",
-                    content: r.rule.patientMessage,
-                  },
-                });
-              }
-              dispatch({
-                type: "ADD_EVENT",
-                payload: {
-                  type: "deterioration",
-                  description: `Complication: ${r.rule.name}`,
-                },
-              });
-            }
-          }
-          return updatedRules;
-        });
-      }, 15000);
-    } else if (complicationTimerRef.current) {
-      clearInterval(complicationTimerRef.current);
-    }
-
-    return () => {
-      if (complicationTimerRef.current)
-        clearInterval(complicationTimerRef.current);
-    };
-  }, [
-    state.isRunning,
-    state.isPaused,
-    state.actionsTaken,
-    state.startTime,
-    actionTimestamps,
-    difficultyModifiers.complicationsEnabled,
-  ]);
-
-  // Advisory mode timer — generates team suggestions periodically
-  useEffect(() => {
-    if (
-      state.isRunning &&
-      !state.isPaused &&
-      difficultyModifiers.advisoryModeEnabled
-    ) {
-      advisoryTimerRef.current = window.setInterval(() => {
-        const elapsedSeconds = (Date.now() - state.startTime) / 1000;
-        const newAdvisories = generateAdvisoryMessages(
-          scenario.id,
-          state.vitals,
-          state.actionsTaken,
-          elapsedSeconds,
-          scenario.correctActions,
-          advisoryMessages,
-        );
-        if (newAdvisories.length > 0) {
-          setAdvisoryMessages((prev) => [...prev, ...newAdvisories]);
-          // Also post to MDT chat for visibility
-          for (const adv of newAdvisories) {
-            dispatch({
-              type: "ADD_MDT_MESSAGE",
-              payload: {
-                sender: adv.fromName,
-                content: adv.suggestion,
-              },
-            });
-          }
-        }
-      }, 12000); // Check every 12 seconds
-    } else if (advisoryTimerRef.current) {
-      clearInterval(advisoryTimerRef.current);
-    }
-
-    return () => {
-      if (advisoryTimerRef.current) clearInterval(advisoryTimerRef.current);
-    };
-  }, [
-    state.isRunning,
-    state.isPaused,
-    state.vitals,
-    state.actionsTaken,
-    state.startTime,
-    scenario.id,
-    scenario.correctActions,
-    difficultyModifiers.advisoryModeEnabled,
-    advisoryMessages,
-  ]);
 
   // Compute clinical score as derived state
   const computedClinicalScore = useMemo(() => {
@@ -896,25 +717,6 @@ export function SimulationProvider({
     });
   }, []);
 
-  const acceptAdvisory = useCallback(
-    (id: string) => {
-      setAdvisoryMessages((prev) =>
-        prev.map((a) => (a.id === id ? { ...a, status: "accepted" as const } : a)),
-      );
-      const advisory = advisoryMessages.find((a) => a.id === id);
-      if (advisory) {
-        sendDoctorMessage(advisory.command);
-      }
-    },
-    [advisoryMessages, sendDoctorMessage],
-  );
-
-  const dismissAdvisory = useCallback((id: string) => {
-    setAdvisoryMessages((prev) =>
-      prev.map((a) => (a.id === id ? { ...a, status: "dismissed" as const } : a)),
-    );
-  }, []);
-
   const startSimulation = useCallback(() => {
     // Initialize all managers
     const drugManager = getDrugEffectManager();
@@ -928,12 +730,10 @@ export function SimulationProvider({
     // Initialize imaging manager
     const imgManager = getImagingManager();
     imgManager.initialize(scenario.id);
-    setImagingStudies(imgManager.getAllStudies());
 
     setPatientState(
       createInitialPatientState(scenario.id, scenario.baselineVitals),
     );
-    setDynamicLabs(labManager.getAllLabs());
     setActionTimestamps({});
     setClinicalScore(null);
     setTeamTasks([]);
@@ -952,8 +752,7 @@ export function SimulationProvider({
     }
     fluidCountRef.current = 0;
 
-    // Reset advisory mode
-    setAdvisoryMessages([]);
+    // Reset advisory cooldowns
     resetAdvisoryCooldowns();
 
     dispatch({ type: "START_SIMULATION" });
@@ -1085,25 +884,6 @@ export function SimulationProvider({
     setDifficulty(level);
   }, []);
 
-  const orderImaging = useCallback((studyId: string) => {
-    const imgManager = getImagingManager();
-    const study = imgManager.orderStudy(studyId);
-    if (study) {
-      setImagingStudies(imgManager.getAllStudies());
-      dispatch({
-        type: "ADD_EVENT",
-        payload: {
-          type: "action",
-          description: `Imaging ordered: ${study.name}`,
-        },
-      });
-      // Update studies again when complete
-      setTimeout(() => {
-        setImagingStudies(imgManager.getAllStudies());
-      }, study.delayMs + 100);
-    }
-  }, []);
-
   const resetSimulation = useCallback(() => {
     // Reset all managers
     resetDrugEffectManager();
@@ -1115,8 +895,6 @@ export function SimulationProvider({
     dispatch({ type: "RESET_SIMULATION", payload: newState });
     setElapsedTime(0);
     setPatientState(null);
-    setActiveDrugEffects([]);
-    setDynamicLabs([]);
     setTeamTasks([]);
     setContextualHints([]);
     setActionTimestamps({});
@@ -1125,9 +903,7 @@ export function SimulationProvider({
     setLastSessionId(null);
     setChecklist(null);
     setComplications([]);
-    setImagingStudies([]);
     setBenchmarkResult(null);
-    setAdvisoryMessages([]);
     resetAdvisoryCooldowns();
     fluidCountRef.current = 0;
   }, [scenario]);
@@ -1144,8 +920,6 @@ export function SimulationProvider({
     dispatch({ type: "RESET_SIMULATION", payload: newState });
     setElapsedTime(0);
     setPatientState(null);
-    setActiveDrugEffects([]);
-    setDynamicLabs([]);
     setTeamTasks([]);
     setContextualHints([]);
     setActionTimestamps({});
@@ -1154,9 +928,7 @@ export function SimulationProvider({
     setLastSessionId(null);
     setChecklist(null);
     setComplications([]);
-    setImagingStudies([]);
     setBenchmarkResult(null);
-    setAdvisoryMessages([]);
     resetAdvisoryCooldowns();
     fluidCountRef.current = 0;
   }, []);
@@ -1179,8 +951,6 @@ export function SimulationProvider({
         // Enhanced features
         clinicalScore: computedClinicalScore,
         patientState,
-        activeDrugEffects,
-        dynamicLabs,
         teamTasks,
         contextualHints: computedContextualHints,
         actionTimestamps,
@@ -1192,18 +962,35 @@ export function SimulationProvider({
         checklist,
         checklistResult,
         complications,
-        // P2: Imaging
-        imagingStudies,
-        orderImaging,
         // Benchmark
         benchmarkResult,
-        // Advisory mode
-        advisoryMessages,
-        acceptAdvisory,
-        dismissAdvisory,
       }}
     >
-      {children}
+      <PharmacologyProvider
+        loopRef={loopRef}
+        isRunning={state.isRunning}
+        baselineVitals={scenario.baselineVitals}
+        dispatch={dispatch}
+      >
+        <LabsProvider
+          loopRef={loopRef}
+          isRunning={state.isRunning}
+        >
+          <TeamProvider
+            loopRef={loopRef}
+            isRunning={state.isRunning}
+            sendDoctorMessage={sendDoctorMessage}
+            dispatch={dispatch}
+            stateRef={stateRef}
+            scenarioRef={scenarioValRef}
+            difficultyModifiersRef={difficultyModifiersRef}
+          >
+            <ImagingProvider dispatch={dispatch}>
+              {children}
+            </ImagingProvider>
+          </TeamProvider>
+        </LabsProvider>
+      </PharmacologyProvider>
     </SimulationContext.Provider>
   );
 }

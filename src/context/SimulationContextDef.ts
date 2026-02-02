@@ -4,10 +4,7 @@ import type { SimulationAction } from "../reducers/simulationReducer";
 import type {
   ClinicalDecisionScore,
   PatientState,
-  ActiveDrugEffect,
-  DynamicLabValue,
   TaskDelegation,
-  AdvisoryMessage,
 } from "../types/enhanced";
 import type {
   DifficultyLevel,
@@ -16,7 +13,6 @@ import type {
   ChecklistResult,
   ComplicationRule,
 } from "../types/difficulty";
-import type { ImagingStudy } from "../types/imaging";
 import type { BenchmarkResult } from "../types/scenarioBuilder";
 
 export interface SimulationContextType {
@@ -35,8 +31,6 @@ export interface SimulationContextType {
   // Enhanced features
   clinicalScore: ClinicalDecisionScore | null;
   patientState: PatientState | null;
-  activeDrugEffects: ActiveDrugEffect[];
-  dynamicLabs: DynamicLabValue[];
   teamTasks: TaskDelegation[];
   contextualHints: string[];
   actionTimestamps: Record<string, number>;
@@ -49,15 +43,8 @@ export interface SimulationContextType {
   checklist: CompetencyChecklist | null;
   checklistResult: ChecklistResult | null;
   complications: ComplicationRule[];
-  // P2: Imaging
-  imagingStudies: ImagingStudy[];
-  orderImaging: (studyId: string) => void;
   // Benchmark
   benchmarkResult: BenchmarkResult | null;
-  // Advisory mode
-  advisoryMessages: AdvisoryMessage[];
-  acceptAdvisory: (id: string) => void;
-  dismissAdvisory: (id: string) => void;
 }
 
 export const SimulationContext = createContext<SimulationContextType | null>(

@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { v4 as uuidv4 } from "uuid";
+import { parseImportedScenario } from "../services/persistence/importValidator";
 import type {
   ScenarioBuilderFormState,
   BuilderStep,
@@ -445,31 +446,38 @@ export function useScenarioBuilder(
       const file = (e.target as HTMLInputElement).files?.[0];
       if (!file) return;
 
-      const text = await file.text();
-      const data = JSON.parse(text) as ExportedScenario;
+      try {
+        const text = await file.text();
+        const data = parseImportedScenario(text) as unknown as ExportedScenario;
 
-      // Generate a new ID to avoid conflicts
-      const newId = `custom-${uuidv4().slice(0, 8)}`;
-      data.scenario.id = newId;
-      data.scenario.createdAt = Date.now();
-      data.scenario.updatedAt = Date.now();
+        // Generate a new ID to avoid conflicts
+        const newId = `custom-${uuidv4().slice(0, 8)}`;
+        data.scenario.id = newId;
+        data.scenario.createdAt = Date.now();
+        data.scenario.updatedAt = Date.now();
 
-      for (const att of data.attachments) {
-        att.scenarioId = newId;
-        att.id = uuidv4();
+        for (const att of data.attachments) {
+          att.scenarioId = newId;
+          att.id = uuidv4();
+        }
+        if (data.benchmark) {
+          data.benchmark.scenarioId = newId;
+        }
+
+        await importScenario(data);
+
+        // Re-register custom scenarios
+        const customs = await getAllCustomScenarios();
+        registerCustomScenarios(customs);
+
+        onSaved();
+      } catch (err) {
+        window.alert(
+          err instanceof Error
+            ? err.message
+            : "Failed to import scenario file.",
+        );
       }
-      if (data.benchmark) {
-        data.benchmark.scenarioId = newId;
-      }
-
-      await importScenario(data);
-
-      // Re-register custom scenarios
-  
-      const customs = await getAllCustomScenarios();
-      registerCustomScenarios(customs);
-
-      onSaved();
     };
     input.click();
   }, [onSaved]);

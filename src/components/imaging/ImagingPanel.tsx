@@ -8,14 +8,15 @@ import {
   AlertTriangle,
   Loader2,
 } from "lucide-react";
-import { useSimulation } from "../../context";
+import { useSimulation, useImaging } from "../../context";
 import { ECGInterpretationPanel } from "./ECGInterpretation";
 import { ABGInterpreter } from "./ABGInterpreter";
 import { getImagingManager, interpretABG } from "../../services/imaging";
 import type { ImagingStudy } from "../../types/imaging";
 
 export function ImagingPanel() {
-  const { state, orderImaging, imagingStudies } = useSimulation();
+  const { state } = useSimulation();
+  const { orderImaging, imagingStudies } = useImaging();
   const [expandedStudy, setExpandedStudy] = useState<string | null>(null);
   const [showECG, setShowECG] = useState(false);
   const [showABG, setShowABG] = useState(false);

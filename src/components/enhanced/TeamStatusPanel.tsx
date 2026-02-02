@@ -1,13 +1,9 @@
-import { useContext } from "react";
 import { Users, CheckCircle, Clock, User } from "lucide-react";
-import { SimulationContext } from "../../context/SimulationContextDef";
+import { useSimulation } from "../../context";
 import { getTeamSimulationManager } from "../../services/team";
 
 export function TeamStatusPanel() {
-  const context = useContext(SimulationContext);
-  if (!context) return null;
-
-  const { teamTasks, state } = context;
+  const { teamTasks, state } = useSimulation();
   const teamManager = getTeamSimulationManager();
   const allTeam = state.isRunning
     ? [

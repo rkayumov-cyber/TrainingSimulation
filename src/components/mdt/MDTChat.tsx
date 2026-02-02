@@ -8,7 +8,7 @@ import {
   X,
   MessageCircle,
 } from "lucide-react";
-import { useSimulation } from "../../context";
+import { useSimulation, useTeam } from "../../context";
 
 function getUrgencyDot(urgency: "critical" | "important" | "fyi") {
   switch (urgency) {
@@ -27,11 +27,13 @@ export function MDTChat() {
   const {
     state,
     sendMDTMessage,
+    difficultyModifiers,
+  } = useSimulation();
+  const {
     advisoryMessages,
     acceptAdvisory,
     dismissAdvisory,
-    difficultyModifiers,
-  } = useSimulation();
+  } = useTeam();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const pendingAdvisories = advisoryMessages.filter(

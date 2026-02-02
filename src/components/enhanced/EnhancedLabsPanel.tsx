@@ -1,4 +1,3 @@
-import { useContext } from "react";
 import {
   FlaskConical,
   TrendingUp,
@@ -6,13 +5,12 @@ import {
   Minus,
   AlertTriangle,
 } from "lucide-react";
-import { SimulationContext } from "../../context/SimulationContextDef";
+import { useSimulation } from "../../context";
+import { useLabs } from "../../context";
 
 export function EnhancedLabsPanel() {
-  const context = useContext(SimulationContext);
-  if (!context) return null;
-
-  const { dynamicLabs, state } = context;
+  const { state } = useSimulation();
+  const { dynamicLabs } = useLabs();
 
   if (!state.isRunning) {
     return (
