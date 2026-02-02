@@ -4,12 +4,15 @@ import { Send, Command, Mic, MicOff, ListChecks, Pen } from "lucide-react";
 import { useSimulation } from "../../context";
 import { useSpeechRecognition } from "../../hooks";
 import {
-  filterSuggestions,
+  filterSuggestionsGrouped,
   getCategoryColor,
   getCategoryBgColor,
+  CATEGORY_META,
 } from "../../services/referee";
+import type { ActionSuggestion } from "../../services/referee";
 import { generateMultipleChoiceOptions } from "../../services/referee/multipleChoice";
 import type { MultipleChoiceOption } from "../../services/referee/multipleChoice";
+import { QuickOrders } from "./QuickOrders";
 
 function getUrgencyStyles(urgency: MultipleChoiceOption["urgency"]) {
   switch (urgency) {
@@ -29,7 +32,10 @@ function getUrgencyLabel(urgency: MultipleChoiceOption["urgency"]) {
     case "critical":
       return { text: "Urgent", className: "text-red-400 bg-red-900/40" };
     case "important":
-      return { text: "Recommended", className: "text-amber-400 bg-amber-900/40" };
+      return {
+        text: "Recommended",
+        className: "text-amber-400 bg-amber-900/40",
+      };
     case "supportive":
       return { text: "Consider", className: "text-blue-400 bg-blue-900/40" };
     case "distractor":
@@ -64,10 +70,17 @@ export function ChatInput() {
     setMessage(interimText);
   }, []);
 
-  // Derive suggestions from message (autocomplete)
-  const suggestions = useMemo(() => filterSuggestions(message), [message]);
+  // Derive grouped suggestions from message (autocomplete)
+  const groupedSuggestions = useMemo(
+    () => filterSuggestionsGrouped(message),
+    [message],
+  );
+  const flatSuggestions = useMemo(
+    () => groupedSuggestions.flatMap((g) => g.suggestions),
+    [groupedSuggestions],
+  );
   const showSuggestions =
-    isFocused && suggestions.length > 0 && message.length >= 2;
+    isFocused && flatSuggestions.length > 0 && message.length >= 2;
 
   // Generate MC options when in beginner mode
   const mcEnabled = difficultyModifiers.multipleChoiceEnabled && !showFreeText;
@@ -101,6 +114,11 @@ export function ChatInput() {
     sendDoctorMessage(option.command);
   };
 
+  const handleQuickOrder = (command: string) => {
+    if (!state.isRunning || state.isPaused) return;
+    sendDoctorMessage(command);
+  };
+
   const selectSuggestion = (command: string) => {
     setMessage(command);
     setSelectedIndex(0);
@@ -117,22 +135,26 @@ export function ChatInput() {
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (showSuggestions && suggestions.length > 0) {
+    if (showSuggestions && flatSuggestions.length > 0) {
       if (e.key === "ArrowDown") {
         e.preventDefault();
-        setSelectedIndex((prev) => (prev + 1) % suggestions.length);
+        setSelectedIndex((prev) => (prev + 1) % flatSuggestions.length);
         return;
       }
       if (e.key === "ArrowUp") {
         e.preventDefault();
         setSelectedIndex(
-          (prev) => (prev - 1 + suggestions.length) % suggestions.length,
+          (prev) =>
+            (prev - 1 + flatSuggestions.length) % flatSuggestions.length,
         );
         return;
       }
-      if (e.key === "Tab" || (e.key === "Enter" && suggestions.length > 0)) {
+      if (
+        e.key === "Tab" ||
+        (e.key === "Enter" && flatSuggestions.length > 0)
+      ) {
         e.preventDefault();
-        selectSuggestion(suggestions[selectedIndex].command);
+        selectSuggestion(flatSuggestions[selectedIndex].command);
         return;
       }
       if (e.key === "Escape") {
@@ -148,11 +170,16 @@ export function ChatInput() {
     }
   };
 
+  // Build flat index for tracking selected item across grouped display
+  const getFlatIndex = (suggestion: ActionSuggestion): number => {
+    return flatSuggestions.indexOf(suggestion);
+  };
+
   // ── Multiple Choice mode ────────────────────
   if (mcEnabled && multipleChoiceOptions.length > 0 && state.isRunning) {
     return (
-      <div className="border-t border-slate-700 p-4 bg-slate-800">
-        <div className="flex items-center justify-between mb-3">
+      <div className="border-t border-slate-700 bg-slate-800">
+        <div className="flex items-center justify-between px-4 pt-4 mb-3">
           <div className="flex items-center gap-2">
             <ListChecks className="w-4 h-4 text-emerald-400" />
             <span className="text-sm font-medium text-slate-300">
@@ -168,7 +195,7 @@ export function ChatInput() {
           </button>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 px-4">
           {multipleChoiceOptions.map((option) => {
             const urgencyLabel = getUrgencyLabel(option.urgency);
             return (
@@ -190,25 +217,37 @@ export function ChatInput() {
                     {urgencyLabel.text}
                   </span>
                 </div>
-                <p className="text-white text-sm font-medium">{option.command}</p>
-                <p className="text-slate-400 text-xs mt-0.5">{option.description}</p>
+                <p className="text-white text-sm font-medium">
+                  {option.command}
+                </p>
+                <p className="text-slate-400 text-xs mt-0.5">
+                  {option.description}
+                </p>
               </button>
             );
           })}
         </div>
 
-        <p className="text-xs text-slate-500 mt-2">
-          Select an action or click "Type instead" for free text input
-        </p>
+        {/* Quick Orders below MC options */}
+        <div className="px-4 pt-3 pb-4">
+          <p className="text-xs text-slate-500 mb-2">
+            Or browse all available orders:
+          </p>
+          <QuickOrders
+            onSelectAction={handleQuickOrder}
+            actionsTaken={state.actionsTaken}
+            disabled={!state.isRunning || state.isPaused}
+          />
+        </div>
       </div>
     );
   }
 
   // ── Free text mode (default / expert / intermediate) ────
   return (
-    <div className="border-t border-slate-700 p-4 bg-slate-800 relative">
-      {/* Autocomplete suggestions */}
-      {showSuggestions && suggestions.length > 0 && (
+    <div className="border-t border-slate-700 bg-slate-800 relative">
+      {/* Grouped autocomplete suggestions */}
+      {showSuggestions && flatSuggestions.length > 0 && (
         <div className="absolute bottom-full left-4 right-4 mb-2 bg-slate-900 border border-slate-700 rounded-lg shadow-xl overflow-hidden max-h-64 overflow-y-auto">
           <div className="px-3 py-2 border-b border-slate-700 flex items-center gap-2">
             <Command className="w-4 h-4 text-slate-500" />
@@ -216,49 +255,81 @@ export function ChatInput() {
               Quick Actions - Use arrow keys to navigate, Tab to select
             </span>
           </div>
-          {suggestions.map((suggestion, index) => (
-            <button
-              key={suggestion.command}
-              onClick={() => selectSuggestion(suggestion.command)}
-              onMouseEnter={() => setSelectedIndex(index)}
-              className={`w-full text-left px-3 py-2 flex items-center gap-3 transition-colors ${
-                index === selectedIndex
-                  ? "bg-slate-800"
-                  : "hover:bg-slate-800/50"
-              }`}
-            >
-              <span
-                className={`text-xs px-2 py-0.5 rounded ${getCategoryBgColor(suggestion.category)} ${getCategoryColor(suggestion.category)}`}
-              >
-                {suggestion.category}
-              </span>
-              <div className="flex-1 min-w-0">
-                <p className="text-white text-sm font-medium">
-                  {suggestion.command}
-                </p>
-                <p className="text-slate-500 text-xs truncate">
-                  {suggestion.description}
-                </p>
+          {groupedSuggestions.map((group) => {
+            const meta = CATEGORY_META.find(
+              (m) => m.category === group.category,
+            );
+            return (
+              <div key={group.category}>
+                <div className="px-3 py-1.5 border-b border-slate-800 bg-slate-900/80">
+                  <span
+                    className={`text-[10px] uppercase tracking-wider font-semibold ${getCategoryColor(group.category)}`}
+                  >
+                    {meta?.icon} {meta?.label ?? group.category}
+                  </span>
+                </div>
+                {group.suggestions.map((suggestion) => {
+                  const flatIdx = getFlatIndex(suggestion);
+                  return (
+                    <button
+                      key={suggestion.command}
+                      onClick={() => selectSuggestion(suggestion.command)}
+                      onMouseEnter={() => setSelectedIndex(flatIdx)}
+                      className={`w-full text-left px-3 py-2 flex items-center gap-3 transition-colors ${
+                        flatIdx === selectedIndex
+                          ? "bg-slate-800"
+                          : "hover:bg-slate-800/50"
+                      }`}
+                    >
+                      <span
+                        className={`text-xs px-2 py-0.5 rounded ${getCategoryBgColor(suggestion.category)} ${getCategoryColor(suggestion.category)}`}
+                      >
+                        {suggestion.category}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-white text-sm font-medium">
+                          {suggestion.command}
+                        </p>
+                        <p className="text-slate-500 text-xs truncate">
+                          {suggestion.description}
+                        </p>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
-            </button>
-          ))}
+            );
+          })}
         </div>
       )}
 
       {/* Show toggle back to MC mode if available */}
-      {difficultyModifiers.multipleChoiceEnabled && showFreeText && state.isRunning && (
-        <div className="mb-2">
-          <button
-            onClick={() => setShowFreeText(false)}
-            className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition-colors px-2 py-1 rounded hover:bg-slate-700"
-          >
-            <ListChecks className="w-3 h-3" />
-            Show options
-          </button>
+      {difficultyModifiers.multipleChoiceEnabled &&
+        showFreeText &&
+        state.isRunning && (
+          <div className="px-4 pt-3">
+            <button
+              onClick={() => setShowFreeText(false)}
+              className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition-colors px-2 py-1 rounded hover:bg-slate-700"
+            >
+              <ListChecks className="w-3 h-3" />
+              Show options
+            </button>
+          </div>
+        )}
+
+      {/* Quick Orders above text input */}
+      {state.isRunning && (
+        <div className="px-4 pt-3 pb-2">
+          <QuickOrders
+            onSelectAction={handleQuickOrder}
+            actionsTaken={state.actionsTaken}
+            disabled={!state.isRunning || state.isPaused}
+          />
         </div>
       )}
 
-      <div className="flex gap-2">
+      <div className="flex gap-2 px-4 pb-1">
         <textarea
           ref={inputRef}
           value={message}
@@ -311,7 +382,7 @@ export function ChatInput() {
           <Send className="w-5 h-5" />
         </button>
       </div>
-      <p className="text-xs text-slate-500 mt-2">
+      <p className="text-xs text-slate-500 px-4 pb-3 pt-1">
         Enter to send | Tab for autocomplete | Shift+Enter for new line
         {micSupported ? " | Mic for voice" : ""}
       </p>
