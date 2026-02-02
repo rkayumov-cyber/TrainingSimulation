@@ -75,7 +75,7 @@ export function ActivityLogPanel() {
           <Activity className="w-12 h-12 text-slate-700 mx-auto mb-3" />
           <p className="text-slate-500 text-sm">No activity recorded yet</p>
           <p className="text-slate-600 text-xs mt-1">
-            Activity will appear here as doctors use simulations
+            Activity will appear here as trainees use simulations
           </p>
         </div>
       ) : (

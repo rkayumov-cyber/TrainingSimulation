@@ -1,11 +1,11 @@
 import { LogOut, User } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
 
-interface DoctorHeaderProps {
+interface TraineeHeaderProps {
   onViewProgress?: () => void;
 }
 
-export function DoctorHeader({ onViewProgress }: DoctorHeaderProps) {
+export function TraineeHeader({ onViewProgress }: TraineeHeaderProps) {
   const { currentUser, logout } = useAuth();
 
   return (

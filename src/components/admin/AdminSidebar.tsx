@@ -9,19 +9,19 @@ import {
 } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
 
-export type ManagerTab =
+export type AdminTab =
   | "scenarios"
   | "templates"
   | "images"
   | "activity"
   | "settings";
 
-interface ManagerSidebarProps {
-  activeTab: ManagerTab;
-  onTabChange: (tab: ManagerTab) => void;
+interface AdminSidebarProps {
+  activeTab: AdminTab;
+  onTabChange: (tab: AdminTab) => void;
 }
 
-const TABS: { key: ManagerTab; label: string; icon: React.ReactNode }[] = [
+const TABS: { key: AdminTab; label: string; icon: React.ReactNode }[] = [
   {
     key: "scenarios",
     label: "Scenarios",
@@ -45,16 +45,13 @@ const TABS: { key: ManagerTab; label: string; icon: React.ReactNode }[] = [
   },
 ];
 
-export function ManagerSidebar({
-  activeTab,
-  onTabChange,
-}: ManagerSidebarProps) {
+export function AdminSidebar({ activeTab, onTabChange }: AdminSidebarProps) {
   const { currentUser, logout } = useAuth();
 
   return (
     <div className="w-56 bg-slate-900 border-r border-slate-800 flex flex-col h-full">
       <div className="px-4 py-5 border-b border-slate-800">
-        <h2 className="text-lg font-bold text-white">Manager Dashboard</h2>
+        <h2 className="text-lg font-bold text-white">Admin Dashboard</h2>
         <p className="text-xs text-slate-500 mt-0.5">
           Manage scenarios & settings
         </p>
@@ -86,7 +83,7 @@ export function ManagerSidebar({
             <p className="text-white text-xs font-medium truncate">
               {currentUser?.name}
             </p>
-            <p className="text-slate-500 text-xs">Manager</p>
+            <p className="text-slate-500 text-xs">Admin</p>
           </div>
         </div>
         <button

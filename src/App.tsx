@@ -11,10 +11,10 @@ import { ProgressDashboard } from "./components/dashboard";
 import { ScenarioBuilderPage } from "./components/builder";
 import { LoginPage } from "./components/auth/LoginPage";
 import { SetupPinPage } from "./components/auth/SetupPinPage";
-import { ManagerDashboard } from "./components/manager/ManagerDashboard";
-import { TemplatePickerPanel } from "./components/manager/TemplatePickerPanel";
-import { ImageLibraryPage } from "./components/manager/ImageLibraryPage";
-import { DoctorHomePage } from "./components/doctor/DoctorHomePage";
+import { AdminDashboard } from "./components/admin/AdminDashboard";
+import { TemplatePickerPanel } from "./components/admin/TemplatePickerPanel";
+import { ImageLibraryPage } from "./components/admin/ImageLibraryPage";
+import { TraineeHomePage } from "./components/trainee/TraineeHomePage";
 import { DemoSelector, DemoWalkthroughPage } from "./components/demo";
 import { getAllCustomScenarios, importScenario } from "./services/persistence";
 import { parseImportedScenario } from "./services/persistence/importValidator";
@@ -26,8 +26,8 @@ type ActivePage =
   | "simulation"
   | "dashboard"
   | "builder"
-  | "manager"
-  | "doctor-home"
+  | "admin"
+  | "trainee-home"
   | "templates"
   | "image-library"
   | "demo-selector"
@@ -36,16 +36,15 @@ type ActivePage =
 function SimulationApp({
   onNavigate,
   onEditScenario,
-  isManager,
+  isAdmin,
 }: {
   onNavigate: (page: ActivePage) => void;
   onEditScenario: (scenarioId: string) => void;
-  isManager: boolean;
+  isAdmin: boolean;
 }) {
   const { state, resetSimulation, endSimulation } = useSimulation();
 
-  const showDebrief =
-    !state.isRunning && state.score.totalActions > 0;
+  const showDebrief = !state.isRunning && state.score.totalActions > 0;
 
   const handleEndAndDebrief = useCallback(() => {
     endSimulation();
@@ -62,11 +61,9 @@ function SimulationApp({
         onEndSimulation={
           state.isRunning && !state.isPaused ? handleEndAndDebrief : undefined
         }
-        onOpenBuilder={isManager ? () => onNavigate("builder") : undefined}
-        onEditCustomScenario={isManager ? onEditScenario : undefined}
-        onBack={() =>
-          onNavigate(isManager ? "manager" : "doctor-home")
-        }
+        onOpenBuilder={isAdmin ? () => onNavigate("builder") : undefined}
+        onEditCustomScenario={isAdmin ? onEditScenario : undefined}
+        onBack={() => onNavigate(isAdmin ? "admin" : "trainee-home")}
       />
       <SplitScreen
         left={
@@ -93,9 +90,9 @@ function SimulationApp({
 }
 
 function AuthenticatedApp() {
-  const { currentUser, isManager } = useAuth();
+  const { currentUser, isAdmin } = useAuth();
   const [activePage, setActivePage] = useState<ActivePage>(
-    isManager ? "manager" : "doctor-home",
+    isAdmin ? "admin" : "trainee-home",
   );
   const [editScenarioId, setEditScenarioId] = useState<string | null>(null);
   const [templateId, setTemplateId] = useState<string | null>(null);
@@ -103,9 +100,9 @@ function AuthenticatedApp() {
     null,
   );
   const [demoScenarioId, setDemoScenarioId] = useState<string | null>(null);
-  const [demoLevel, setDemoLevel] = useState<
-    "excellent" | "mediocre" | "poor"
-  >("excellent");
+  const [demoLevel, setDemoLevel] = useState<"excellent" | "mediocre" | "poor">(
+    "excellent",
+  );
 
   // Load custom scenarios on mount
   useEffect(() => {
@@ -116,19 +113,16 @@ function AuthenticatedApp() {
 
   // Reset page when user changes
   useEffect(() => {
-    setActivePage(isManager ? "manager" : "doctor-home");
-  }, [currentUser?.name, isManager]);
+    setActivePage(isAdmin ? "admin" : "trainee-home");
+  }, [currentUser?.name, isAdmin]);
 
-  const handleNavigate = useCallback(
-    (page: ActivePage) => {
-      setActivePage(page);
-      if (page !== "builder") {
-        setEditScenarioId(null);
-        setTemplateId(null);
-      }
-    },
-    [],
-  );
+  const handleNavigate = useCallback((page: ActivePage) => {
+    setActivePage(page);
+    if (page !== "builder") {
+      setEditScenarioId(null);
+      setTemplateId(null);
+    }
+  }, []);
 
   const handleEditScenario = useCallback((scenarioId: string) => {
     setEditScenarioId(scenarioId);
@@ -168,7 +162,7 @@ function AuthenticatedApp() {
         await importScenario(data);
         const customs = await getAllCustomScenarios();
         registerCustomScenarios(customs);
-        setActivePage("manager");
+        setActivePage("admin");
       } catch (err) {
         window.alert(
           err instanceof Error
@@ -188,7 +182,7 @@ function AuthenticatedApp() {
           setDemoLevel(level);
           handleNavigate("demo-walkthrough");
         }}
-        onBack={() => handleNavigate(isManager ? "manager" : "doctor-home")}
+        onBack={() => handleNavigate(isAdmin ? "admin" : "trainee-home")}
       />
     );
   }
@@ -207,25 +201,23 @@ function AuthenticatedApp() {
     return (
       <SimulationProvider>
         <ProgressDashboard
-          onBack={() =>
-            handleNavigate(isManager ? "manager" : "doctor-home")
-          }
+          onBack={() => handleNavigate(isAdmin ? "admin" : "trainee-home")}
         />
       </SimulationProvider>
     );
   }
 
-  if (activePage === "builder" && isManager) {
+  if (activePage === "builder" && isAdmin) {
     return (
       <ErrorBoundary name="ScenarioBuilder">
         <ScenarioBuilderPage
           editScenarioId={editScenarioId}
           templateId={templateId}
-          onBack={() => handleNavigate("manager")}
+          onBack={() => handleNavigate("admin")}
           onSaved={() => {
             getAllCustomScenarios().then((customs) => {
               registerCustomScenarios(customs);
-              handleNavigate("manager");
+              handleNavigate("admin");
             });
           }}
         />
@@ -233,22 +225,22 @@ function AuthenticatedApp() {
     );
   }
 
-  if (activePage === "templates" && isManager) {
+  if (activePage === "templates" && isAdmin) {
     return (
       <TemplatePickerPanel
-        onBack={() => handleNavigate("manager")}
+        onBack={() => handleNavigate("admin")}
         onSelectTemplate={handleNewFromTemplate}
       />
     );
   }
 
-  if (activePage === "image-library" && isManager) {
-    return <ImageLibraryPage onBack={() => handleNavigate("manager")} />;
+  if (activePage === "image-library" && isAdmin) {
+    return <ImageLibraryPage onBack={() => handleNavigate("admin")} />;
   }
 
-  if (activePage === "manager" && isManager) {
+  if (activePage === "admin" && isAdmin) {
     return (
-      <ManagerDashboard
+      <AdminDashboard
         onOpenBuilder={(editId) => {
           if (editId) {
             handleEditScenario(editId);
@@ -270,9 +262,9 @@ function AuthenticatedApp() {
     );
   }
 
-  if (activePage === "doctor-home" && !isManager) {
+  if (activePage === "trainee-home" && !isAdmin) {
     return (
-      <DoctorHomePage
+      <TraineeHomePage
         onStartSimulation={(scenario) => {
           setInitialScenarioId(scenario.id);
           handleNavigate("simulation");
@@ -289,7 +281,7 @@ function AuthenticatedApp() {
       <SimulationApp
         onNavigate={handleNavigate}
         onEditScenario={handleEditScenario}
-        isManager={isManager}
+        isAdmin={isAdmin}
       />
     </SimulationProvider>
   );

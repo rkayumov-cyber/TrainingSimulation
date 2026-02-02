@@ -11,9 +11,9 @@ export interface AuthContextValue {
   currentUser: AuthUser | null;
   isSetupComplete: boolean;
   isLoading: boolean;
-  isManager: boolean;
-  loginAsManager: (pin: string) => Promise<boolean>;
-  loginAsDoctor: (name: string) => void;
+  isAdmin: boolean;
+  loginAsAdmin: (pin: string, name?: string) => Promise<boolean>;
+  loginAsTrainee: (name: string) => void;
   logout: () => void;
   setupAdminPin: (pin: string) => Promise<void>;
   changeAdminPin: (currentPin: string, newPin: string) => Promise<boolean>;
@@ -52,14 +52,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     init();
   }, []);
 
-  const loginAsManager = useCallback(
-    async (pin: string): Promise<boolean> => {
+  const loginAsAdmin = useCallback(
+    async (pin: string, name?: string): Promise<boolean> => {
       if (!authSettings) return false;
       const valid = await verifyPin(pin, authSettings.adminPinHash);
       if (valid) {
         const user: AuthUser = {
-          name: "Manager",
-          role: "manager",
+          name: name || "Admin",
+          role: "admin",
           loginTime: Date.now(),
         };
         setCurrentUser(user);
@@ -71,10 +71,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [authSettings],
   );
 
-  const loginAsDoctor = useCallback((name: string) => {
+  const loginAsTrainee = useCallback((name: string) => {
     const user: AuthUser = {
       name,
-      role: "doctor",
+      role: "trainee",
       loginTime: Date.now(),
     };
     setCurrentUser(user);
@@ -115,7 +115,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [authSettings],
   );
 
-  const isManager = currentUser?.role === "manager";
+  const isAdmin = currentUser?.role === "admin";
 
   return (
     <AuthContext.Provider
@@ -123,9 +123,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         currentUser,
         isSetupComplete,
         isLoading,
-        isManager,
-        loginAsManager,
-        loginAsDoctor,
+        isAdmin,
+        loginAsAdmin,
+        loginAsTrainee,
         logout,
         setupAdminPin,
         changeAdminPin,

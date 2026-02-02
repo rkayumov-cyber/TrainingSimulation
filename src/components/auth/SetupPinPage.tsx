@@ -43,7 +43,7 @@ export function SetupPinPage() {
           </h1>
           <p className="text-slate-400 text-sm">
             Set up your admin PIN to get started. This PIN will be used for
-            manager access.
+            administrator access.
           </p>
         </div>
 
@@ -86,9 +86,7 @@ export function SetupPinPage() {
             </div>
           </div>
 
-          {error && (
-            <p className="text-red-400 text-xs text-center">{error}</p>
-          )}
+          {error && <p className="text-red-400 text-xs text-center">{error}</p>}
 
           <button
             type="submit"

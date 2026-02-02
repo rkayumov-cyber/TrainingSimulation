@@ -10,8 +10,8 @@ import {
   Database,
   Trash2,
 } from "lucide-react";
-import { ManagerSidebar } from "./ManagerSidebar";
-import type { ManagerTab } from "./ManagerSidebar";
+import { AdminSidebar } from "./AdminSidebar";
+import type { AdminTab } from "./AdminSidebar";
 import { ScenarioListPanel } from "./ScenarioListPanel";
 import { ActivityLogPanel } from "./ActivityLogPanel";
 import { SettingsPanel } from "./SettingsPanel";
@@ -24,7 +24,7 @@ import {
   isDemoSeeded,
 } from "../../services/demo";
 
-interface ManagerDashboardProps {
+interface AdminDashboardProps {
   onOpenBuilder: (editId?: string) => void;
   onOpenTemplates: () => void;
   onOpenImageLibrary: () => void;
@@ -33,15 +33,15 @@ interface ManagerDashboardProps {
   onViewDemos?: () => void;
 }
 
-export function ManagerDashboard({
+export function AdminDashboard({
   onOpenBuilder,
   onOpenTemplates,
   onOpenImageLibrary,
   onStartSimulation,
   onImportScenario,
   onViewDemos,
-}: ManagerDashboardProps) {
-  const [activeTab, setActiveTab] = useState<ManagerTab>("scenarios");
+}: AdminDashboardProps) {
+  const [activeTab, setActiveTab] = useState<AdminTab>("scenarios");
   const [stats, setStats] = useState({
     totalScenarios: 0,
     totalSessions: 0,
@@ -92,7 +92,7 @@ export function ManagerDashboard({
 
   return (
     <div className="h-screen bg-slate-950 text-white flex">
-      <ManagerSidebar activeTab={activeTab} onTabChange={setActiveTab} />
+      <AdminSidebar activeTab={activeTab} onTabChange={setActiveTab} />
 
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Quick Stats Bar */}

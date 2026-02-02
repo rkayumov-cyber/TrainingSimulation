@@ -17,14 +17,17 @@ import {
   Wrench,
   BookOpen,
 } from "lucide-react";
-import { DoctorHeader } from "./DoctorHeader";
+import { TraineeHeader } from "./TraineeHeader";
 import { getAllScenarios } from "../../scenarios";
-import { getScenarioProgress, getSessionSummaries } from "../../services/persistence";
+import {
+  getScenarioProgress,
+  getSessionSummaries,
+} from "../../services/persistence";
 import { isDemoSession } from "../../services/demo";
 import type { ScenarioDefinition } from "../../types";
 import type { ScenarioProgress, SessionSummary } from "../../types/session";
 
-interface DoctorHomePageProps {
+interface TraineeHomePageProps {
   onStartSimulation: (scenario: ScenarioDefinition) => void;
   onViewProgress: () => void;
   onViewDemos?: () => void;
@@ -60,11 +63,11 @@ function getScenarioColor(id: string) {
   return "text-emerald-400";
 }
 
-export function DoctorHomePage({
+export function TraineeHomePage({
   onStartSimulation,
   onViewProgress,
   onViewDemos,
-}: DoctorHomePageProps) {
+}: TraineeHomePageProps) {
   const [progressMap, setProgressMap] = useState<
     Record<string, ScenarioProgress>
   >({});
@@ -101,7 +104,7 @@ export function DoctorHomePage({
 
   return (
     <div className="h-screen bg-slate-950 text-white flex flex-col">
-      <DoctorHeader onViewProgress={onViewProgress} />
+      <TraineeHeader onViewProgress={onViewProgress} />
 
       <div className="flex-1 overflow-y-auto">
         {/* Welcome */}
@@ -196,9 +199,7 @@ export function DoctorHomePage({
                   key={s.id}
                   className="flex items-center gap-3 bg-slate-900/50 border border-slate-800 rounded-lg px-3 py-2"
                 >
-                  <span
-                    className={`text-lg font-bold ${gradeColor(s.grade)}`}
-                  >
+                  <span className={`text-lg font-bold ${gradeColor(s.grade)}`}>
                     {s.grade}
                   </span>
                   <div className="flex-1 min-w-0">
